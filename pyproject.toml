@@ -1,0 +1,61 @@
+[tool.poetry]
+name = "st-bubble-chat"
+version = "0.1.0"
+description = "A Streamlit component to create a bubble-style chat UI."
+authors = ["akitorahayashi <atora.has75@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+streamlit = "^1.49.1"
+pandas = "^2.0.0"
+numpy = ">=1.26.0,<2.0"
+plotly = "^5.17.0"
+httpx = "^0.28.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+black = "^25.1.0"
+ruff = "^0.12.11"
+ipython = "^9.5.0"
+selenium = "^4.0.0"
+python-dotenv = "^1.0.0"
+requests = "^2.31.0"
+pytest-asyncio = "^1.1.0"
+
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.black]
+target-version = ['py312']
+exclude = '''
+/(\
+    \.git
+    | \.mypy_cache
+    | \.venv
+    | build
+    | dist
+)/
+'''
+
+[tool.ruff]
+target-version = "py312"
+
+exclude = [
+	"__pycache__",
+	"migrations",
+	"db.sqlite3",
+	"*.pyc"
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+# E501 (line too long) and F841 (unused variable) are ignored
+ignore = ["E501", "F841"]
