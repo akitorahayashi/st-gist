@@ -1,6 +1,5 @@
 import streamlit as st
 
-from src.components.footer import render_footer
 from src.components.header import render_header
 
 from .app_description import render_app_description
@@ -29,5 +28,3 @@ def render_url_input_page():
     # Close page container
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Footer component
-    render_footer()

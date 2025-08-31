@@ -31,6 +31,7 @@ def render_url_input_form():
             height: 100vh;
             overflow: hidden;
             padding: 0;
+            padding-bottom: 4rem !important;
             margin: 0 auto;
             max-width: 600px;
         }

@@ -4,8 +4,10 @@ import streamlit as st
 def render_sidebar():
     """Render sidebar with chat controls"""
     with st.sidebar:
+        st.title("Gist")
+
         if st.button(
-            "🏠 新しいURLを入力",
+            "🏠 New URL",
             help="新しいURLを入力するページに戻る",
             key="new_url_btn",
             use_container_width=True,
@@ -24,7 +26,7 @@ def render_sidebar():
             st.rerun()
         
         if st.button(
-            "🔄 New Chat",
+            "✨ New Chat",
             help="Clear history and start a new chat",
             key="new_chat_btn",
             use_container_width=True,
