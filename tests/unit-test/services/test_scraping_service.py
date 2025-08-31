@@ -100,3 +100,23 @@ class TestScrapingService:
                 (None, None, None, None, ("8.8.8.8", None))
             ]
             assert self.scraping_service._is_private_host("google.com") is False
+
+    @patch("src.services.scraping_service.socket.getaddrinfo")
+    def test_validate_url_nonexistent_host(self, mock_getaddrinfo):
+        """Test URL validation with nonexistent/fake hostname."""
+        # Mock getaddrinfo to raise gaierror for both IPv4 and IPv6
+        import socket
+        mock_getaddrinfo.side_effect = socket.gaierror("Name or service not known")
+
+        with pytest.raises(ValueError, match="指定されたホスト 'hogehoge' が見つかりません"):
+            self.scraping_service.validate_url("http://hogehoge")
+
+    @patch("src.services.scraping_service.requests.get")
+    def test_scrape_unexpected_error(self, mock_get):
+        """Test scraping with unexpected error (not ValueError)."""
+        # Mock an unexpected error like KeyError
+        mock_get.side_effect = KeyError("Unexpected error")
+
+        with patch.object(self.scraping_service, "validate_url"):
+            with pytest.raises(ValueError, match="予期しないエラーが発生しました"):
+                self.scraping_service.scrape("https://example.com")

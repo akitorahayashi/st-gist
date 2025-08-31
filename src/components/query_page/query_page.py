@@ -10,6 +10,7 @@ from src.components.sidebar import render_sidebar
 def render_query_page():
     """Render query page with URL summary and chat functionality"""
     st.title("Query Page")
+    
 
     # Show URL being analyzed
     if "target_url" in st.session_state:
