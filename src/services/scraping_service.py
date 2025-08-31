@@ -24,6 +24,11 @@ class ScrapingService:
                     addrs.add(info[4][0])
             except socket.gaierror:
                 continue
+        
+        # DNS解決できない場合（架空のホスト）
+        if not addrs:
+            raise ValueError(f"指定されたホスト '{host}' が見つかりません。URLを確認してください。")
+        
         for addr in addrs:
             ip = ipaddress.ip_address(addr.split("%")[0])
             if (
@@ -38,27 +43,33 @@ class ScrapingService:
         return False
 
     def scrape(self, url: str, timeout=(10, 30)) -> str:
-        self.validate_url(url)
-
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        }
         try:
-            response = requests.get(
-                url, headers=headers, timeout=timeout, allow_redirects=False
-            )
-            response.raise_for_status()
-        except requests.RequestException as e:
-            raise ValueError(f"コンテンツ取得に失敗しました: {e}") from e
+            self.validate_url(url)
 
-        # 明らかに非 HTML のレスポンスは早期リターン
-        ctype = (response.headers.get("Content-Type") or "").lower()
-        if not ("html" in ctype or ctype.startswith("text/")):
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
+            try:
+                response = requests.get(
+                    url, headers=headers, timeout=timeout, allow_redirects=False
+                )
+                response.raise_for_status()
+            except requests.RequestException as e:
+                raise ValueError(f"コンテンツ取得に失敗しました: {e}") from e
+
+            # 明らかに非 HTML のレスポンスは早期リターン
+            ctype = (response.headers.get("Content-Type") or "").lower()
+            if not ("html" in ctype or ctype.startswith("text/")):
+                return ""
+
+            soup = BeautifulSoup(response.content, "html.parser")
+            for element in soup(["script", "style", "header", "footer", "nav", "aside"]):
+                element.decompose()
+            if soup.body:
+                return soup.body.get_text(separator=" ", strip=True)
             return ""
-
-        soup = BeautifulSoup(response.content, "html.parser")
-        for element in soup(["script", "style", "header", "footer", "nav", "aside"]):
-            element.decompose()
-        if soup.body:
-            return soup.body.get_text(separator=" ", strip=True)
-        return ""
+        except Exception as e:
+            # 予期しないエラーの場合
+            if not isinstance(e, ValueError):
+                raise ValueError(f"予期しないエラーが発生しました: {str(e)}") from e
+            raise
