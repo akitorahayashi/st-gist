@@ -7,26 +7,26 @@ def render_footer():
         """
         <style>
         .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: #000000;
-            padding: 1rem 2rem;
-            text-align: center;
-            border-top: 1px solid #333333;
-            font-size: 0.9rem;
-            color: #ffffff;
-            z-index: 999;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background-color: #000000 !important;
+            padding: 1rem 2rem !important;
+            text-align: center !important;
+            border-top: 1px solid #333333 !important;
+            font-size: 0.9rem !important;
+            color: #ffffff !important;
+            z-index: 999 !important;
         }
         .footer a {
-            color: #007bff;
-            text-decoration: none;
-            font-weight: 500;
+            color: #007bff !important;
+            text-decoration: none !important;
+            font-weight: 500 !important;
         }
         .footer a:hover {
-            color: #0056b3;
-            text-decoration: underline;
+            color: #0056b3 !important;
+            text-decoration: underline !important;
         }
         /* Add bottom padding to main content to account for fixed footer */
         .main .block-container {

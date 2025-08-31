@@ -5,7 +5,7 @@ class ScrapingProtocol(Protocol):
     """
     Protocol for web scraping services.
     """
-    
+
     def scrape(self, url: str, timeout: tuple = (10, 30)) -> str:
         """
         Scrape content from a web page.
@@ -16,12 +16,12 @@ class ScrapingProtocol(Protocol):
 
         Returns:
             Extracted text content from the web page.
-            
+
         Raises:
             ValueError: If URL is invalid or scraping fails.
         """
         ...
-    
+
     def validate_url(self, url: str) -> None:
         """
         Validate URL format and security.

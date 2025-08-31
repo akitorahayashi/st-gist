@@ -1,4 +1,5 @@
 import logging
+
 from src.protocols.ollama_client_protocol import OllamaClientProtocol
 
 logger = logging.getLogger(__name__)
@@ -6,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 class SummarizationServiceError(Exception):
     """A custom exception for errors during the summarization process."""
+
     pass
 
 

@@ -5,7 +5,7 @@ class SummarizationProtocol(Protocol):
     """
     Protocol for text summarization services.
     """
-    
+
     async def summarize(self, text: str, max_chars: int = 10000) -> str:
         """
         Summarize the given text.

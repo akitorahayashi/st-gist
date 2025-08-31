@@ -5,7 +5,7 @@ class MockScrapingService:
     """
     Mock scraping service for testing and development.
     """
-    
+
     def __init__(self):
         self.mock_content: Dict[str, str] = {
             "https://example.com": """
@@ -61,33 +61,33 @@ class MockScrapingService:
                 About the Author:
                 I'm a full-stack developer with 5 years of experience in building
                 web applications using modern technologies like React, Python, and Node.js.
-            """
+            """,
         }
-    
+
     def validate_url(self, url: str) -> None:
         """Mock URL validation - always passes for test URLs."""
         if not url.startswith(("http://", "https://")):
             raise ValueError("URLは http/https のみ対応しています。")
         if "blocked.com" in url:
             raise ValueError("指定のホストは許可されていません。")
-    
+
     def scrape(self, url: str, timeout: tuple = (10, 30)) -> str:
         """
         Mock scraping that returns predefined content.
-        
+
         Args:
             url: The URL to scrape
             timeout: Ignored in mock
-            
+
         Returns:
             Mock content for the URL
         """
         self.validate_url(url)
-        
+
         # Return specific content if available, otherwise generic content
         if url in self.mock_content:
             return self.mock_content[url].strip()
-        
+
         # Generate generic content for unknown URLs
         return f"""
         Website Content

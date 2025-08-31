@@ -3,14 +3,14 @@ import os
 import streamlit as st
 
 from src.clients.ollama_client import OllamaApiClient
-from src.components.url_input import render_url_input_page
 from src.components.query_page import render_query_page
+from src.components.url_input_page import render_url_input_page
 from src.services.conversation_service import ConversationService
 
 
 def main():
     initialize_session()
-    
+
     # Route between URL input and query pages
     if st.session_state.get("show_chat", False):
         render_query_page()
@@ -42,8 +42,6 @@ def initialize_session():
         st.session_state.conversation_service = ConversationService(
             st.session_state.ollama_client
         )
-
-
 
 
 if __name__ == "__main__":
