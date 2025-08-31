@@ -1,4 +1,6 @@
 import asyncio
+import re
+from urllib.parse import urlparse
 
 import streamlit as st
 
@@ -129,9 +131,17 @@ def render_url_input_form():
     # Black button with dynamic state
     if st.button(button_text, use_container_width=True, disabled=button_disabled):
         if url.strip():
-            # Set processing state
-            st.session_state.processing = True
-            st.rerun()
+            try:
+                # Validate URL before processing
+                scraping_service = ScrapingService()
+                scraping_service.validate_url(url.strip())
+                # Set processing state
+                st.session_state.processing = True
+                st.rerun()
+            except ValueError as e:
+                st.error(f"{str(e)}")
+        else:
+            st.error("URLを入力してください")
 
     # Handle processing when button was clicked
     if st.session_state.get("processing", False):
