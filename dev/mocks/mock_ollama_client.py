@@ -1,13 +1,13 @@
 import asyncio
 from typing import AsyncGenerator
 
-from src.clients.ollama_api_client.interface import OllamaClientInterface
+from src.protocols.ollama_client_protocol import OllamaClientProtocol
 
 # Streaming configuration
 WORD_DELAY = 0.15  # Delay between words (seconds)
 
 
-class MockOllamaApiClient(OllamaClientInterface):
+class MockOllamaApiClient:
     """
     A mock client for testing and development purposes.
     """

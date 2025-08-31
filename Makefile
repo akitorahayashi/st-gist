@@ -55,7 +55,7 @@ run: ## Launch the Streamlit application with development port
 		exit 1; \
 	fi
 	@echo "🚀 Starting Streamlit app on development port..."
-	@export $$(cat .env | xargs) && STREAMLIT_SERVER_PORT=$${DEV_PORT:-8503} poetry run streamlit run $(STREAMLIT_APP_FILE)
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && PYTHONPATH=. STREAMLIT_SERVER_PORT=$${DEV_PORT:-8503} poetry run streamlit run $(STREAMLIT_APP_FILE)
 
 .PHONY: run-prod
 run-prod: ## Launch the Streamlit application with production port
@@ -64,7 +64,7 @@ run-prod: ## Launch the Streamlit application with production port
 		exit 1; \
 	fi
 	@echo "🚀 Starting Streamlit app on production port..."
-	@export $$(cat .env | xargs) && STREAMLIT_SERVER_PORT=$${HOST_PORT:-8501} poetry run streamlit run $(STREAMLIT_APP_FILE)
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && PYTHONPATH=. STREAMLIT_SERVER_PORT=$${HOST_PORT:-8501} poetry run streamlit run $(STREAMLIT_APP_FILE)
 
 # ==============================================================================
 # CODE QUALITY
@@ -87,12 +87,17 @@ lint: ## Perform static code analysis (check) using Black and Ruff
 # ==============================================================================
 
 .PHONY: test
-test: unit-test build-test e2e-test ## Run the full test suite
+test: unit-test build-test intg-test e2e-test ## Run the full test suite
 
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
 	@poetry run python -m pytest tests/unit-test -v
+
+.PHONY: intg-test
+intg-test: ## Run integration tests with mocks (no external dependencies)
+	@echo "Running integration tests with mocks..."
+	@poetry run python -m pytest tests/integration -v
 
 .PHONY: build-test
 build-test: ## Run build tests
