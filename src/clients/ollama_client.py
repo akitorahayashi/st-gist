@@ -63,10 +63,10 @@ class OllamaApiClient:
                                 continue
         except httpx.RequestError as e:
             logger.error(f"Ollama API streaming request failed: {e}")
-            return
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in Ollama API streaming: {e}")
-            return
+            raise
 
     def generate(self, prompt: str, model: str = None) -> AsyncGenerator[str, None]:
         """

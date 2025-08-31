@@ -63,16 +63,16 @@ def handle_user_input():
 
 def handle_ai_response():
     """Handle AI response processing"""
-    if st.session_state.get("ai_thinking", False):
-        # Show thinking bubble only before streaming starts
+    svc = st.session_state.get("conversation_service")
+    if st.session_state.get("ai_thinking", False) and svc:
         if not st.session_state.get("streaming_active", False):
             st.markdown(render_thinking_bubble(), unsafe_allow_html=True)
-
-        st.session_state.conversation_service.handle_ai_thinking()
+        svc.handle_ai_thinking()
 
 
 def check_start_ai_thinking():
     """Check if AI should start thinking"""
-    if st.session_state.conversation_service.should_start_ai_thinking():
+    svc = st.session_state.get("conversation_service")
+    if svc and svc.should_start_ai_thinking():
         st.session_state.ai_thinking = True
         st.rerun()

@@ -31,7 +31,7 @@ def render_sidebar():
             key="new_chat_btn",
             use_container_width=True,
         ):
-            st.session_state.messages.clear()
-            if "ai_thinking" in st.session_state:
-                del st.session_state.ai_thinking
+            st.session_state["messages"] = []
+            for k in ("ai_thinking", "streaming_active"):
+                st.session_state.pop(k, None)
             st.rerun()

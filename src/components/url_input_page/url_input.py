@@ -11,6 +11,10 @@ from src.services.summarization_service import (
 
 def render_url_input_form():
     """Render URL input form with centered layout"""
+    last_error = st.session_state.pop("last_error", None)
+    if last_error:
+        st.error(last_error)
+
     # Hide sidebar for URL input page and add responsive styling
     st.markdown(
         """
@@ -138,9 +142,11 @@ def render_url_input_form():
                 st.session_state.processing = True
                 st.rerun()
             except ValueError as e:
-                st.error(f"{str(e)}")
+                st.session_state.last_error = f"{str(e)}"
+                st.rerun()
         else:
-            st.error("URLを入力してください")
+            st.session_state.last_error = "URLを入力してください"
+            st.rerun()
 
     # Handle processing when button was clicked
     if st.session_state.get("processing", False):
@@ -176,20 +182,20 @@ def render_url_input_form():
 
             except ValueError as e:
                 st.session_state.processing = False
-                st.error(f"エラー: {str(e)}")
+                st.session_state.last_error = f"エラー: {str(e)}"
                 st.rerun()
             except SummarizationServiceError as e:
                 st.session_state.processing = False
-                st.error(f"要約エラー: {str(e)}")
+                st.session_state.last_error = f"要約エラー: {str(e)}"
                 st.rerun()
             except Exception as e:
                 st.session_state.processing = False
-                st.error(f"予期しないエラーが発生しました: {str(e)}")
+                st.session_state.last_error = f"予期しないエラーが発生しました: {str(e)}"
                 st.rerun()
         else:
             # Show error if no URL when processing started
             st.session_state.processing = False
-            st.error("URLを入力してください")
+            st.session_state.last_error = "URLを入力してください"
             st.rerun()
 
     # Close centered content wrapper
