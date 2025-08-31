@@ -1,8 +1,8 @@
 import html
-import toml
 from pathlib import Path
 
 import streamlit as st
+import toml
 
 
 def load_chat_colors():
@@ -13,7 +13,7 @@ def load_chat_colors():
         chat_config = config.get("chat", {})
         return {
             "user_color": chat_config.get("userMessageColor", "#007bff"),
-            "ai_color": chat_config.get("aiMessageColor", "#f1f1f1")
+            "ai_color": chat_config.get("aiMessageColor", "#f1f1f1"),
         }
     return {"user_color": "#007bff", "ai_color": "#f1f1f1"}
 

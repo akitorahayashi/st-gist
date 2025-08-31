@@ -24,11 +24,13 @@ class ScrapingService:
                     addrs.add(info[4][0])
             except socket.gaierror:
                 continue
-        
+
         # DNS解決できない場合（架空のホスト）
         if not addrs:
-            raise ValueError(f"指定されたホスト '{host}' が見つかりません。URLを確認してください。")
-        
+            raise ValueError(
+                f"指定されたホスト '{host}' が見つかりません。URLを確認してください。"
+            )
+
         for addr in addrs:
             ip = ipaddress.ip_address(addr.split("%")[0])
             if (
@@ -63,7 +65,9 @@ class ScrapingService:
                 return ""
 
             soup = BeautifulSoup(response.content, "html.parser")
-            for element in soup(["script", "style", "header", "footer", "nav", "aside"]):
+            for element in soup(
+                ["script", "style", "header", "footer", "nav", "aside"]
+            ):
                 element.decompose()
             if soup.body:
                 return soup.body.get_text(separator=" ", strip=True)

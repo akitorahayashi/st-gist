@@ -10,19 +10,18 @@ from src.components.sidebar import render_sidebar
 def render_query_page():
     """Render query page with URL summary and chat functionality"""
     st.title("Query Page")
-    
 
     # Show URL being analyzed
     if "target_url" in st.session_state:
         st.markdown(f"**About:** {st.session_state.target_url}")
-        
+
         # Display summary directly
         summary_content = st.session_state.get(
             "page_summary",
             "このページの要約を作成しました。以下が主な内容です：\n\n• ページのメインテーマと概要\n• 重要なポイントや情報\n• 構造や特徴的な要素",
         )
         st.markdown(summary_content)
-        
+
         # Add divider before chat
         st.markdown("---")
 

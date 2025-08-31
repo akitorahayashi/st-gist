@@ -1,6 +1,4 @@
 import asyncio
-import re
-from urllib.parse import urlparse
 
 import streamlit as st
 
@@ -160,7 +158,9 @@ def render_url_input_form():
                     summarization_service = SummarizationService(
                         st.session_state.ollama_client
                     )
-                    summary = asyncio.run(summarization_service.summarize(scraped_content))
+                    summary = asyncio.run(
+                        summarization_service.summarize(scraped_content)
+                    )
                     st.session_state.page_summary = summary
                 else:
                     st.session_state.page_summary = "要約を生成できませんでした。"

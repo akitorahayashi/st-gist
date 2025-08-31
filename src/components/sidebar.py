@@ -24,7 +24,7 @@ def render_sidebar():
             if "streaming_active" in st.session_state:
                 del st.session_state.streaming_active
             st.rerun()
-        
+
         if st.button(
             "✨ New Chat",
             help="Clear history and start a new chat",

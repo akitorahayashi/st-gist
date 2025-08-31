@@ -106,9 +106,12 @@ class TestScrapingService:
         """Test URL validation with nonexistent/fake hostname."""
         # Mock getaddrinfo to raise gaierror for both IPv4 and IPv6
         import socket
+
         mock_getaddrinfo.side_effect = socket.gaierror("Name or service not known")
 
-        with pytest.raises(ValueError, match="指定されたホスト 'hogehoge' が見つかりません"):
+        with pytest.raises(
+            ValueError, match="指定されたホスト 'hogehoge' が見つかりません"
+        ):
             self.scraping_service.validate_url("http://hogehoge")
 
     @patch("src.services.scraping_service.requests.get")
