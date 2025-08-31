@@ -6,12 +6,10 @@ from typing import AsyncGenerator
 import httpx
 import streamlit as st
 
-from .interface import OllamaClientInterface
-
 logger = logging.getLogger(__name__)
 
 
-class OllamaApiClient(OllamaClientInterface):
+class OllamaApiClient:
     """
     A client for interacting with the Ollama API.
     """
@@ -65,10 +63,10 @@ class OllamaApiClient(OllamaClientInterface):
                                 continue
         except httpx.RequestError as e:
             logger.error(f"Ollama API streaming request failed: {e}")
-            return
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in Ollama API streaming: {e}")
-            return
+            raise
 
     def generate(self, prompt: str, model: str = None) -> AsyncGenerator[str, None]:
         """

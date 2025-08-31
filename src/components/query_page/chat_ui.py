@@ -1,10 +1,26 @@
 import html
+from pathlib import Path
 
 import streamlit as st
+import toml
+
+
+def load_chat_colors():
+    """Load chat colors from config.toml"""
+    config_path = Path(".streamlit/config.toml")
+    if config_path.exists():
+        config = toml.load(config_path)
+        chat_config = config.get("chat", {})
+        return {
+            "user_color": chat_config.get("userMessageColor", "#007bff"),
+            "ai_color": chat_config.get("aiMessageColor", "#f1f1f1"),
+        }
+    return {"user_color": "#007bff", "ai_color": "#f1f1f1"}
 
 
 def render_user_message(message):
     """Render user message with inline styles"""
+    colors = load_chat_colors()
     return f"""
     <style>
     .user-message {{
@@ -14,7 +30,7 @@ def render_user_message(message):
         margin: 10px 0;
     }}
     .user-content {{
-        background-color: #007bff;
+        background-color: {colors['user_color']};
         color: white;
         max-width: 70%;
         padding: 12px 16px;
@@ -32,6 +48,7 @@ def render_user_message(message):
 
 def render_ai_message(message):
     """Render AI message with inline styles"""
+    colors = load_chat_colors()
     return f"""
     <style>
     .ai-message {{
@@ -41,7 +58,7 @@ def render_ai_message(message):
         margin: 10px 0;
     }}
     .ai-content {{
-        background-color: #f1f1f1;
+        background-color: {colors['ai_color']};
         color: #333;
         max-width: 70%;
         padding: 12px 16px;
@@ -59,28 +76,29 @@ def render_ai_message(message):
 
 def render_thinking_bubble():
     """Render AI thinking bubble with inline styles"""
-    return """
+    colors = load_chat_colors()
+    return f"""
     <style>
-    .thinking-message {
+    .thinking-message {{
         display: flex;
         align-items: flex-start;
         justify-content: flex-start;
         margin: 10px 0;
-    }
-    .thinking-content {
-        background-color: #f1f1f1;
+    }}
+    .thinking-content {{
+        background-color: {colors['ai_color']};
         color: #333;
         max-width: 70%;
         padding: 12px 16px;
         border-radius: 20px;
-    }
-    .thinking-dots {
+    }}
+    .thinking-dots {{
         animation: thinking 1.5s infinite;
-    }
-    @keyframes thinking {
-        0%, 50%, 100% { opacity: 1; }
-        25%, 75% { opacity: 0.5; }
-    }
+    }}
+    @keyframes thinking {{
+        0%, 50%, 100% {{ opacity: 1; }}
+        25%, 75% {{ opacity: 0.5; }}
+    }}
     </style>
     <div class="thinking-message">
         <div class="thinking-content">

@@ -1,13 +1,11 @@
-from abc import ABC, abstractmethod
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Protocol
 
 
-class OllamaClientInterface(ABC):
+class OllamaClientProtocol(Protocol):
     """
-    Abstract base class for Ollama API clients.
+    Protocol for Ollama API clients.
     """
 
-    @abstractmethod
     def generate(self, prompt: str, model: str = None) -> AsyncGenerator[str, None]:
         """
         Generate text using the model with streaming.
@@ -19,4 +17,4 @@ class OllamaClientInterface(ABC):
         Returns:
             AsyncGenerator yielding text chunks.
         """
-        pass
+        ...

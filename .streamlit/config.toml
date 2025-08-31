@@ -1,0 +1,10 @@
+[theme]
+base = "light"
+primaryColor = "#333333"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+
+[chat]
+userMessageColor = "#262730"
+aiMessageColor = "#f1f1f1"
