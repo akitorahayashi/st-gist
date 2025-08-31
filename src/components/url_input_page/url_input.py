@@ -190,7 +190,9 @@ def render_url_input_form():
                 st.rerun()
             except Exception as e:
                 st.session_state.processing = False
-                st.session_state.last_error = f"予期しないエラーが発生しました: {str(e)}"
+                st.session_state.last_error = (
+                    f"予期しないエラーが発生しました: {str(e)}"
+                )
                 st.rerun()
         else:
             # Show error if no URL when processing started
