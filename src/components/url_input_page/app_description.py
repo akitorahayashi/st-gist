@@ -27,7 +27,7 @@ def render_app_description():
         <div class="app-description">
             <h2>ウェブページ要約ツール</h2>
             <p>
-                URLを入力するだけで、AIがページの内容を分析・要約し、<br>
+                URLを入力することで、AIがページの内容を分析・要約し、<br>
                 そのページについて質問できるチャットボットになります
             </p>
         </div>

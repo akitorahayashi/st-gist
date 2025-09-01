@@ -11,9 +11,6 @@ from src.services.summarization_service import (
 
 def render_url_input_form():
     """Render URL input form with centered layout"""
-    last_error = st.session_state.pop("last_error", None)
-    if last_error:
-        st.error(last_error)
 
     # Hide sidebar for URL input page and add responsive styling
     st.markdown(
@@ -121,6 +118,11 @@ def render_url_input_form():
         key="url_input",
         label_visibility="collapsed",
     )
+    
+    # Show error message directly under the input
+    last_error = st.session_state.pop("last_error", None)
+    if last_error:
+        st.error(last_error)
 
     st.markdown("<br>", unsafe_allow_html=True)
 

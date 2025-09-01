@@ -32,10 +32,8 @@ def initialize_session():
                 from dev.mocks.mock_ollama_client import MockOllamaApiClient
 
                 st.session_state.ollama_client = MockOllamaApiClient()
-                st.sidebar.success("🚧 DEBUG MODE: Using Mock Client")
             else:
                 st.session_state.ollama_client = OllamaApiClient()
-                st.sidebar.info("🌐 Using Real Ollama API")
         if (
             "conversation_service" not in st.session_state
             and "ollama_client" in st.session_state
