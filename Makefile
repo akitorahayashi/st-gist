@@ -12,6 +12,7 @@
 .DEFAULT_GOAL := help
 
 # Specify the Python executable and main Streamlit file name
+PYTHON := ./.venv/bin/python
 STREAMLIT_APP_FILE := ./src/main.py
 
 # ==============================================================================
@@ -92,19 +93,19 @@ test: unit-test build-test e2e-test intg-test ## Run the full test suite
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
-	@python -m pytest tests/unit-test -v
+	@$(PYTHON) -m pytest tests/unit-test -v
 
 .PHONY: intg-test
 intg-test: ## Run integration tests with mocks (no external dependencies)
 	@echo "Running integration tests with mocks..."
-	@python -m pytest tests/intg -v
+	@$(PYTHON) -m pytest tests/intg -v
 
 .PHONY: build-test
 build-test: ## Run build tests
 	@echo "Running build tests..."
-	@python -m pytest tests/build -s
+	@$(PYTHON) -m pytest tests/build -s
 
 .PHONY: e2e-test
 e2e-test: ## Run end-to-end tests
 	@echo "Running end-to-end tests..."
-	@python -m pytest tests/e2e -s
+	@$(PYTHON) -m pytest tests/e2e -s

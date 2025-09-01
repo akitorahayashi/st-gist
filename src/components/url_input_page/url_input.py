@@ -5,6 +5,7 @@ from src.services.scraping_service import ScrapingService
 
 def render_url_input_form():
     """Render URL input form with centered layout"""
+    app_state = st.session_state.app_state
 
     # Hide sidebar for URL input page and add responsive styling
     st.markdown(
@@ -102,65 +103,39 @@ def render_url_input_form():
         unsafe_allow_html=True,
     )
 
-    # Create centered content wrapper
-    st.markdown(
-        """
-        <style>
-        [data-testid="stSidebar"] {
-            display: none;
-        }
-        
-        /* ... */
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .main .block-container {
-                max-width: 90%;
-            }
-            .centered-content {
-                padding: 1rem;
-            }
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
     st.markdown('<div class="centered-content">', unsafe_allow_html=True)
-
-    is_processing = st.session_state.get("processing", False)
 
     url = st.text_input(
         "URLを入力してください",
         placeholder="https://example.com",
         key="url_input",
         label_visibility="collapsed",
-        disabled=is_processing,  # 処理中は入力を無効化
+        disabled=app_state.is_processing,
     )
 
-    last_error = st.session_state.pop("last_error", None)
-    if last_error:
-        st.error(last_error)
+    if app_state.last_error:
+        st.error(app_state.last_error)
+        app_state.clear_error()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    button_text = "ページの内容を取得中..." if is_processing else "要約を開始"
-    button_disabled = is_processing
+    button_text = "ページの内容を取得中..." if app_state.is_processing else "要約を開始"
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button(button_text, use_container_width=True, disabled=button_disabled):
+    if st.button(
+        button_text, use_container_width=True, disabled=app_state.is_processing
+    ):
         if url.strip():
             try:
                 ScrapingService().validate_url(url.strip())
-                st.session_state.processing = True
-                st.session_state.target_url = url.strip()
+                app_state.start_summarization(url.strip())
                 st.rerun()
             except ValueError as e:
-                st.session_state.last_error = f"{str(e)}"
+                app_state.set_error(f"{str(e)}")
                 st.rerun()
         else:
-            st.session_state.last_error = "URLを入力してください"
+            app_state.set_error("URLを入力してください")
             st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)

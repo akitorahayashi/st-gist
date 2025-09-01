@@ -18,10 +18,13 @@ class TestBuild:
         host_ip = os.getenv("HOST_IP", "localhost")
         test_port = os.getenv("TEST_PORT", "8502")
 
+        # Define path to venv streamlit
+        streamlit_path = os.path.join(project_root, ".venv", "bin", "streamlit")
+
         # Start Streamlit server in background
         process = subprocess.Popen(
             [
-                "streamlit",
+                streamlit_path,
                 "run",
                 app_path,
                 f"--server.port={test_port}",

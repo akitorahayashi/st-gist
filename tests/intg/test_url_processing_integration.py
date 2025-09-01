@@ -124,7 +124,7 @@ class TestUrlProcessingIntegration:
         # Should get a meaningful response (not empty)
         assert len(response.strip()) > 0
         # Should contain think tags and actual response (with possible spacing due to tokenization)
-        assert "think>" in response and "/ think>" in response
+        assert "<think>" in response and "</think>" in response
 
     @pytest.mark.asyncio
     async def test_integration_with_different_content_types(self):

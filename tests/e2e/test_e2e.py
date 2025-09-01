@@ -26,10 +26,11 @@ class TestE2E:
         )
 
         app_path = os.path.join(project_root, "src", "main.py")
+        streamlit_path = os.path.join(project_root, ".venv", "bin", "streamlit")
 
         process = subprocess.Popen(
             [
-                "streamlit",
+                streamlit_path,
                 "run",
                 app_path,
                 f"--server.port={test_port}",
@@ -127,10 +128,11 @@ class TestE2E:
         )
 
         app_path = os.path.join(project_root, "src", "main.py")
+        streamlit_path = os.path.join(project_root, ".venv", "bin", "streamlit")
 
         process = subprocess.Popen(
             [
-                "streamlit",
+                streamlit_path,
                 "run",
                 app_path,
                 f"--server.port={test_port}",

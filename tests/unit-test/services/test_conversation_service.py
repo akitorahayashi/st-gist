@@ -1,185 +1,86 @@
 import os
 import sys
-from unittest.mock import Mock, patch
-
 import pytest
+import asyncio
+from unittest.mock import Mock, AsyncMock
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../"))
+# Add project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
 from src.services.conversation_service import ConversationService
 
+@pytest.fixture
+def mock_client():
+    """Fixture for a mock client."""
+    client = Mock()
 
-class MockStreamlitSessionState:
-    """Mock Streamlit session state for testing"""
+    async def mock_generate(prompt):
+        response = f"Response to {prompt}"
+        for char in response:
+            yield char
+            await asyncio.sleep(0.01)
 
-    def __init__(self):
-        self._state = {}
+    client.generate = mock_generate
+    return client
 
-    def get(self, key, default=None):
-        return self._state.get(key, default)
-
-    def __getitem__(self, key):
-        return self._state[key]
-
-    def __setitem__(self, key, value):
-        self._state[key] = value
-
-    def __contains__(self, key):
-        return key in self._state
-
-    def __getattr__(self, name):
-        return self._state.get(name)
-
-    def __setattr__(self, name, value):
-        if name == "_state":
-            super().__setattr__(name, value)
-        else:
-            self._state[name] = value
-
-    def __delitem__(self, key):
-        if key in self._state:
-            del self._state[key]
-
+@pytest.fixture
+def conversation_service(mock_client):
+    """Fixture for ConversationService."""
+    return ConversationService(client=mock_client)
 
 class TestConversationService:
-    """Test suite for ConversationService"""
+    """Test suite for ConversationService."""
 
-    @pytest.fixture
-    def mock_client(self):
-        """Create a mock client for testing"""
-        client = Mock()
-
-        async def mock_generate(prompt, model=None):
-            # Mock streaming response
-            test_response = "Test response"
-            for char in test_response:
-                yield char
-
-        client.generate = mock_generate
-        return client
-
-    @pytest.fixture
-    def mock_st(self):
-        """Mock streamlit module"""
-        with patch("src.services.conversation_service.st") as mock_st:
-            mock_st.session_state = MockStreamlitSessionState()
-            mock_st.rerun = Mock()
-            yield mock_st
-
-    @pytest.fixture
-    def conversation_service(self, mock_client, mock_st):
-        """Create ConversationService instance for testing"""
-        return ConversationService(mock_client)
-
-    def test_init(self, mock_client):
-        """Test ConversationService initialization"""
+    def test_initialization(self, mock_client):
+        """Test that the service is initialized correctly."""
         service = ConversationService(mock_client)
         assert service.client == mock_client
 
-    def test_should_start_ai_thinking_empty_messages(
-        self, conversation_service, mock_st
-    ):
-        """Test should_start_ai_thinking with empty messages"""
-        mock_st.session_state.messages = []
-        result = conversation_service.should_start_ai_thinking()
-        assert result is False
+    @pytest.mark.parametrize("messages, is_ai_thinking, expected", [
+        ([], False, False),  # No messages
+        ([{"role": "ai", "content": "Hello"}], False, False),  # Last message not from user
+        ([{"role": "user", "content": "Hi"}], True, False),  # AI is already thinking
+        ([{"role": "user", "content": "Hi"}], False, True),  # Valid case to start thinking
+        ([{"role": "ai", "content": "Hello"}, {"role": "user", "content": "Question"}], False, True) # Valid case
+    ])
+    def test_should_start_ai_thinking(self, conversation_service, messages, is_ai_thinking, expected):
+        """Test the logic for when the AI should start responding."""
+        result = conversation_service.should_start_ai_thinking(messages, is_ai_thinking)
+        assert result == expected
 
-    def test_should_start_ai_thinking_no_user_message(
-        self, conversation_service, mock_st
-    ):
-        """Test should_start_ai_thinking with no user message"""
-        mock_st.session_state.messages = [{"role": "ai", "content": "Hello"}]
-        result = conversation_service.should_start_ai_thinking()
-        assert result is False
+    @pytest.mark.asyncio
+    async def test_generate_response_streaming(self, conversation_service):
+        """Test that generate_response returns a proper async generator."""
+        prompt = "test prompt"
+        response_generator = conversation_service.generate_response(prompt)
 
-    def test_should_start_ai_thinking_already_thinking(
-        self, conversation_service, mock_st
-    ):
-        """Test should_start_ai_thinking when already thinking"""
-        mock_st.session_state.messages = [{"role": "user", "content": "Hello"}]
-        mock_st.session_state["ai_thinking"] = True
-        result = conversation_service.should_start_ai_thinking()
-        assert result is False
+        import inspect
+        assert inspect.isasyncgen(response_generator)
 
-    def test_should_start_ai_thinking_valid(self, conversation_service, mock_st):
-        """Test should_start_ai_thinking with valid conditions"""
-        mock_st.session_state.messages = [{"role": "user", "content": "Hello"}]
-        mock_st.session_state["ai_thinking"] = False
-        result = conversation_service.should_start_ai_thinking()
-        assert result is True
+        # Verify the streamed content
+        chunks = [chunk async for chunk in response_generator]
+        full_response = "".join(chunks)
 
-    def test_limit_messages_under_limit(self, conversation_service, mock_st):
-        """Test limit_messages when under limit"""
-        messages = [{"role": "user", "content": f"Message {i}"} for i in range(5)]
-        mock_st.session_state.messages = messages
-        conversation_service.limit_messages(max_messages=10)
-        assert len(mock_st.session_state.messages) == 5
+        assert full_response == f"Response to {prompt}"
 
-    def test_limit_messages_over_limit(self, conversation_service, mock_st):
-        """Test limit_messages when over limit"""
-        messages = [{"role": "user", "content": f"Message {i}"} for i in range(15)]
-        mock_st.session_state.messages = messages
-        conversation_service.limit_messages(max_messages=10)
-        assert len(mock_st.session_state.messages) == 10
-        # Check that it kept the last 10 messages
-        assert mock_st.session_state.messages[0]["content"] == "Message 5"
-        assert mock_st.session_state.messages[-1]["content"] == "Message 14"
+    @pytest.mark.asyncio
+    async def test_generate_response_with_mock_client(self):
+        """Test streaming response generation using a detailed mock."""
+        mock_client = Mock()
 
-    def test_handle_ai_thinking_not_thinking(self, conversation_service, mock_st):
-        """Test handle_ai_thinking when not in thinking state"""
-        mock_st.session_state["ai_thinking"] = False
-        conversation_service.handle_ai_thinking()
-        # Should not modify state
-        assert not mock_st.session_state.get("streaming_started", False)
+        async def async_generator():
+            yield "Hello"
+            yield " "
+            yield "World"
 
-    def test_handle_ai_thinking_streaming_start(self, conversation_service, mock_st):
-        """Test handle_ai_thinking starts streaming"""
-        mock_st.session_state.messages = [{"role": "user", "content": "Test message"}]
-        mock_st.session_state["ai_thinking"] = True
-        mock_st.session_state["streaming_active"] = False
+        # The mock should return an async generator when `generate` is called
+        mock_client.generate = Mock(return_value=async_generator())
 
-        with patch.object(conversation_service, "_start_streaming") as mock_start:
-            conversation_service.handle_ai_thinking()
-            mock_start.assert_called_once()
+        service = ConversationService(client=mock_client)
 
-    def test_handle_ai_thinking_streaming_continue(self, conversation_service, mock_st):
-        """Test handle_ai_thinking continues streaming"""
-        mock_st.session_state["ai_thinking"] = True
-        mock_st.session_state["streaming_active"] = True
+        # Get the stream and collect results
+        stream = service.generate_response("any prompt")
+        results = [item async for item in stream]
 
-        with patch.object(conversation_service, "_continue_streaming") as mock_continue:
-            conversation_service.handle_ai_thinking()
-            mock_continue.assert_called_once()
-
-    def test_start_streaming(self, conversation_service, mock_st):
-        """Test _start_streaming initializes correctly"""
-        mock_st.session_state.messages = [{"role": "user", "content": "Test message"}]
-
-        with patch.object(
-            conversation_service, "_prepare_streaming_chunks"
-        ) as mock_prepare:
-            conversation_service._start_streaming()
-
-            assert mock_st.session_state.get("streaming_active") is True
-            assert mock_st.session_state.get("streaming_response") == ""
-            assert mock_st.session_state.get("streaming_complete") is False
-            assert len(mock_st.session_state.messages) == 2
-            assert mock_st.session_state.messages[-1]["role"] == "ai"
-            mock_prepare.assert_called_once_with("Test message")
-
-    def test_cleanup_streaming(self, conversation_service, mock_st):
-        """Test _cleanup_streaming clears state"""
-        # Set up streaming state
-        mock_st.session_state["ai_thinking"] = True
-        mock_st.session_state["streaming_active"] = True
-        mock_st.session_state["stream_chunks"] = ["T", "e", "s", "t"]
-
-        conversation_service._cleanup_streaming()
-
-        assert mock_st.session_state.get("ai_thinking") is False
-        assert mock_st.session_state.get("streaming_active") is False
-        assert mock_st.session_state.get("stream_chunks") is None
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        assert "".join(results) == "Hello World"
+        mock_client.generate.assert_called_once_with("any prompt")
