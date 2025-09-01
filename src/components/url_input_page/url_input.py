@@ -103,76 +103,64 @@ def render_url_input_form():
     )
 
     # Create centered content wrapper
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"] {
+            display: none;
+        }
+        
+        /* ... */
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main .block-container {
+                max-width: 90%;
+            }
+            .centered-content {
+                padding: 1rem;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown('<div class="centered-content">', unsafe_allow_html=True)
 
-    # URL input and button - truly centered
-    placeholder = st.empty()
-    with placeholder.container():
-        url = st.text_input(
-            "URLを入力してください",
-            placeholder="https://example.com",
-            key="url_input",
-            label_visibility="collapsed",
-        )
+    is_processing = st.session_state.get("processing", False)
 
-        # Show error message directly under the input
-        last_error = st.session_state.pop("last_error", None)
-        if last_error:
-            st.error(last_error)
+    url = st.text_input(
+        "URLを入力してください",
+        placeholder="https://example.com",
+        key="url_input",
+        label_visibility="collapsed",
+        disabled=is_processing,  # 処理中は入力を無効化
+    )
 
-        st.markdown("<br>", unsafe_allow_html=True)
+    last_error = st.session_state.pop("last_error", None)
+    if last_error:
+        st.error(last_error)
 
-        # Check if processing
-        is_processing = st.session_state.get("processing", False)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        # Dynamic button text and state
-        button_text = "ページの内容を取得中..." if is_processing else "要約を開始"
-        button_disabled = is_processing
+    button_text = "ページの内容を取得中..." if is_processing else "要約を開始"
+    button_disabled = is_processing
 
-        st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        # Button click to start scraping process
-        if st.button(button_text, use_container_width=True, disabled=button_disabled):
-            if url.strip():
-                try:
-                    # Validate URL and start scraping
-                    ScrapingService().validate_url(url.strip())
-                    st.session_state.processing = True
-                    st.session_state.target_url = url.strip()
-                    st.rerun()
-                except ValueError as e:
-                    st.session_state.last_error = f"{str(e)}"
-                    st.rerun()
-            else:
-                st.session_state.last_error = "URLを入力してください"
+    if st.button(button_text, use_container_width=True, disabled=button_disabled):
+        if url.strip():
+            try:
+                ScrapingService().validate_url(url.strip())
+                st.session_state.processing = True
+                st.session_state.target_url = url.strip()
                 st.rerun()
-
-    # Processing: scrape and store content, then transition
-    if is_processing:
-        try:
-            # Perform scraping with validation
-            scraped_content = ScrapingService().scrape(
-                st.session_state.target_url
-            )
-            st.session_state.scraped_content = scraped_content
-
-            # Clean up processing state
-            st.session_state.processing = False
-            st.session_state.pop("target_url", None)
-
-            # Reset messages for new session
-            if "messages" in st.session_state:
-                st.session_state.messages = []
-
-            # Clear the placeholder and navigate to Query Page
-            placeholder.empty()
-            st.session_state.show_chat = True
+            except ValueError as e:
+                st.session_state.last_error = f"{str(e)}"
+                st.rerun()
+        else:
+            st.session_state.last_error = "URLを入力してください"
             st.rerun()
 
-        except (ValueError, Exception) as e:
-            st.session_state.processing = False
-            st.session_state.last_error = f"エラーが発生しました: {str(e)}"
-            st.rerun()
-
-    # Close centered content wrapper
     st.markdown("</div>", unsafe_allow_html=True)

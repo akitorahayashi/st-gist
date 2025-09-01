@@ -10,53 +10,46 @@ from .url_input import render_url_input_form
 def render_url_input_page():
     """Render complete URL input page with header, description, form, and footer"""
 
-    # Header component
     render_header()
 
-    # Page container
-    st.markdown('<div class="page-container">', unsafe_allow_html=True)
-
+    # UI要素全体を保持するプレースホルダーを作成
     placeholder = st.empty()
-    is_processing = st.session_state.get("processing", False)
 
-    if not is_processing:
-        with placeholder.container():
-            # App description section
-            st.markdown('<div class="description-section">', unsafe_allow_html=True)
-            render_app_description()
-            st.markdown("</div>", unsafe_allow_html=True)
+    # プレースホルダー内にUIを描画
+    with placeholder.container():
+        st.markdown('<div class="page-container">', unsafe_allow_html=True)
+        st.markdown('<div class="description-section">', unsafe_allow_html=True)
+        render_app_description()
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('<div class="form-section">', unsafe_allow_html=True)
+        render_url_input_form()
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-            # URL input form section
-            st.markdown('<div class="form-section">', unsafe_allow_html=True)
-            render_url_input_form()
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    else:
-        # Processing logic is now handled here
+    # UIを描画した後に、処理状態を確認してスクレイピングを実行
+    if st.session_state.get("processing", False):
         try:
-            # Perform scraping with validation
-            scraped_content = ScrapingService().scrape(
-                st.session_state.target_url
-            )
+            # スクレイピング処理（ブロッキング）
+            scraped_content = ScrapingService().scrape(st.session_state.target_url)
             st.session_state.scraped_content = scraped_content
 
-            # Clean up processing state
+            # 処理状態をクリーンアップ
             st.session_state.processing = False
             st.session_state.pop("target_url", None)
 
-            # Reset messages for new session
             if "messages" in st.session_state:
                 st.session_state.messages = []
 
-            # Clear the placeholder and navigate to Query Page
+            # ★★★ ページ遷移の直前にプレースホルダーを空にする ★★★
             placeholder.empty()
+
+            # 要約・チャットページへ遷移
             st.session_state.show_chat = True
             st.rerun()
 
         except (ValueError, Exception) as e:
+            # エラーが発生した場合は処理を中断し、エラーメッセージを表示
             st.session_state.processing = False
             st.session_state.last_error = f"エラーが発生しました: {str(e)}"
+            # エラーが発生した場合もUIは再描画されるため、プレースホルダーはクリアしない
             st.rerun()
-
-    # Close page container
-    st.markdown("</div>", unsafe_allow_html=True)
