@@ -2,6 +2,7 @@ import os
 
 import streamlit as st
 
+from src.components.header import render_header
 from src.clients.ollama_client import OllamaApiClient
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
@@ -11,6 +12,7 @@ from src.services.conversation_service import ConversationService
 def main():
     initialize_session()
 
+
     # Complete component switching - only one renders at a time
     if st.session_state.get("show_chat", False):
         st.set_page_config(layout="wide")
@@ -19,6 +21,8 @@ def main():
         st.set_page_config(layout="centered")
         render_url_input_page()
 
+    if not st.session_state.get("show_chat", False):
+        render_header()
 
 def initialize_session():
     # Client should be initialized regardless of the page

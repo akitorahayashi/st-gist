@@ -1,6 +1,5 @@
 import streamlit as st
 
-from src.components.header import render_header
 from src.services.scraping_service import ScrapingService
 
 from .app_description import render_app_description
@@ -9,8 +8,6 @@ from .url_input import render_url_input_form
 
 def render_url_input_page():
     """Render complete URL input page with header, description, form, and footer"""
-
-    render_header()
 
     # UI要素全体を保持するプレースホルダーを作成
     placeholder = st.empty()
