@@ -127,13 +127,35 @@ def handle_stream_generation():
                 
                 # Extract current content and separate think tags
                 current_response = "".join(st.session_state.stream_parts)
-                thinking_content, summary_content = extract_think_content(current_response)
+
+                # Initialize variables
+                thinking_content = ""
+                summary_content = ""
+
+                # Manually parse the stream to handle incomplete think tags for streaming UI
+                last_think_start = current_response.rfind("<think>")
+                last_think_end = current_response.rfind("</think>")
+
+                if last_think_start != -1:
+                    # Content before the last <think> tag
+                    summary_before_think = current_response[:last_think_start]
+
+                    if last_think_end > last_think_start:
+                        # A complete <think>...</think> block exists
+                        thinking_content = current_response[last_think_start + 7 : last_think_end]
+                        summary_content = summary_before_think + current_response[last_think_end + 8:]
+                    else:
+                        # We are inside an unclosed <think> tag, stream the content
+                        thinking_content = current_response[last_think_start + 7:]
+                        summary_content = summary_before_think
+                else:
+                    # No <think> tags found yet
+                    summary_content = current_response
+
+                # Update session state with the parsed content
+                st.session_state.current_thinking = thinking_content
                 
-                # Update session state with separated content
-                if thinking_content.strip():
-                    st.session_state.current_thinking = thinking_content
-                
-                # Only update summary if not inside think tags
+                # Only update the final summary when outside of think tags to prevent flicker
                 if summary_content.strip() and not is_inside_think_tags(current_response):
                     st.session_state.page_summary = summary_content
                 
