@@ -4,7 +4,6 @@ import streamlit as st
 def render_sidebar():
     """Render sidebar with chat controls"""
     with st.sidebar:
-        st.title("Gist")
 
         if st.button(
             "🏠 New URL",

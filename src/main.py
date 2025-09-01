@@ -13,8 +13,10 @@ def main():
 
     # Route between URL input and query pages
     if st.session_state.get("show_chat", False):
+        st.set_page_config(layout="wide")
         render_query_page()
     else:
+        st.set_page_config(layout="centered")
         render_url_input_page()
 
 
