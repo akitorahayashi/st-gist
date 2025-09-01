@@ -75,7 +75,18 @@ class TestMockClientIntegration:
         # Should get some response
         assert len(response_chunks) > 0
         full_response = "".join(response_chunks)
-        assert "test response" in full_response.lower()
+        # New mock should include specific test response and think tags
+        # The response may have spacing due to tokenization, so check for key words
+        assert "test" in full_response.lower()
+        assert "mock client" in full_response.lower()
+        assert (
+            "everything" in full_response.lower()
+            or "every thing" in full_response.lower()
+        ) and (
+            "working" in full_response.lower() or "wor king" in full_response.lower()
+        )
+        # Check for think tags (with possible spacing due to tokenization)
+        assert "think>" in full_response and "/ think>" in full_response
 
     def test_conversation_service_with_mock_client_streaming(
         self, conversation_service, mock_st

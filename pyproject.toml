@@ -1,7 +1,7 @@
 [project]
-name = "st-bubble-chat"
+name = "st-gist"
 version = "0.1.0"
-description = "A Streamlit component to create a bubble-style chat UI."
+description = "A Streamlit app to summarize and query web pages."
 authors = [
     {name = "akitorahayashi", email = "atora.has75@gmail.com"}
 ]

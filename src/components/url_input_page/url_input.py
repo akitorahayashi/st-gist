@@ -2,6 +2,11 @@ import asyncio
 
 import streamlit as st
 
+from src.components.think_display import (
+    clear_thinking_content,
+    render_think_display,
+    update_thinking_content,
+)
 from src.services.scraping_service import ScrapingService
 from src.services.summarization_service import (
     SummarizationService,
@@ -118,7 +123,7 @@ def render_url_input_form():
         key="url_input",
         label_visibility="collapsed",
     )
-    
+
     # Show error message directly under the input
     last_error = st.session_state.pop("last_error", None)
     if last_error:
@@ -140,6 +145,8 @@ def render_url_input_form():
                 # Validate URL before processing
                 scraping_service = ScrapingService()
                 scraping_service.validate_url(url.strip())
+                # Clear previous thinking content
+                clear_thinking_content()
                 # Set processing state
                 st.session_state.processing = True
                 st.rerun()
@@ -149,6 +156,17 @@ def render_url_input_form():
         else:
             st.session_state.last_error = "URLを入力してください"
             st.rerun()
+
+    # Thinking process toggle (always visible)
+    st.markdown("<br>", unsafe_allow_html=True)
+    show_thinking = st.toggle(
+        "🤔 思考の過程を表示する",
+        key="show_thinking_toggle",
+        help="AIの思考過程をリアルタイムで表示します",
+    )
+
+    # Render thinking display if toggled on
+    render_think_display(show_thinking)
 
     # Handle processing when button was clicked
     if st.session_state.get("processing", False):
@@ -161,14 +179,51 @@ def render_url_input_form():
                 scraping_service = ScrapingService()
                 scraped_content = scraping_service.scrape(url.strip())
 
-                # Generate summary using existing ollama client
+                # Generate summary using existing ollama client with streaming
                 if "ollama_client" in st.session_state:
                     summarization_service = SummarizationService(
                         st.session_state.ollama_client
                     )
-                    summary = asyncio.run(
-                        summarization_service.summarize(scraped_content)
-                    )
+
+                    # Prepare for streaming summary
+                    summary_parts = []
+                    clear_thinking_content()
+
+                    # Create an async function to handle streaming
+                    async def stream_summary():
+                        truncated_content = scraped_content[:10000]  # Max chars
+                        prompt = summarization_service._build_prompt(truncated_content)
+
+                        chunk_count = 0
+                        async for chunk in st.session_state.ollama_client.generate(
+                            prompt
+                        ):
+                            summary_parts.append(chunk)
+                            chunk_count += 1
+
+                            # Update thinking content in real-time if toggle is on
+                            if st.session_state.get("show_thinking_toggle", False):
+                                thinking_complete = update_thinking_content(chunk)
+
+                                # Trigger UI update every 10 chunks or if thinking complete
+                                if chunk_count % 10 == 0 or thinking_complete:
+                                    st.rerun()
+
+                                # Check if thinking is complete and navigate to query page
+                                if thinking_complete:
+                                    # Short delay to show final thinking content
+                                    import asyncio
+
+                                    await asyncio.sleep(0.5)
+
+                                    # Set navigation flag
+                                    st.session_state.should_navigate_to_chat = True
+                                    return "".join(summary_parts).strip()
+
+                        return "".join(summary_parts).strip()
+
+                    # Run the streaming summary
+                    summary = asyncio.run(stream_summary())
                     st.session_state.page_summary = summary
                 else:
                     st.session_state.page_summary = "要約を生成できませんでした。"
@@ -177,10 +232,29 @@ def render_url_input_form():
                 if "messages" in st.session_state:
                     st.session_state.messages = []
 
-                # Clear processing state and navigate to chat
+                # Clear processing state but don't navigate to chat yet
+                # Navigation will happen when think tags are complete
                 st.session_state.processing = False
-                st.session_state.show_chat = True
-                st.rerun()
+
+                # Check if we should navigate based on thinking completion or toggle state
+                should_navigate = (
+                    not st.session_state.get(
+                        "show_thinking_toggle", False
+                    )  # Toggle is off
+                    or st.session_state.get(
+                        "thinking_complete", False
+                    )  # Thinking is complete
+                    or st.session_state.get(
+                        "should_navigate_to_chat", False
+                    )  # Navigation flag set
+                )
+
+                if should_navigate:
+                    # Clean up navigation flag
+                    if "should_navigate_to_chat" in st.session_state:
+                        del st.session_state.should_navigate_to_chat
+                    st.session_state.show_chat = True
+                    st.rerun()
 
             except ValueError as e:
                 st.session_state.processing = False

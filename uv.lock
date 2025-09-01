@@ -1009,7 +1009,7 @@ wheels = [
 ]
 
 [[package]]
-name = "st-bubble-chat"
+name = "st-gist"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

@@ -1,13 +1,14 @@
 import asyncio
+import re
 from typing import AsyncGenerator
 
 # Streaming configuration
-WORD_DELAY = 0.15  # Delay between words (seconds)
+TOKEN_DELAY = 0.05  # Delay between tokens (seconds)
 
 
 class MockOllamaApiClient:
     """
-    A mock client for testing and development purposes.
+    A high-fidelity mock client that simulates real Ollama API behavior.
     """
 
     def __init__(self):
@@ -20,48 +21,110 @@ class MockOllamaApiClient:
         ]
         self.response_index = 0
 
-    async def _stream_response(self, response_text: str) -> AsyncGenerator[str, None]:
+    def _tokenize_realistic(self, text: str) -> list[str]:
         """
-        Stream a response text word by word (like real API).
+        Tokenize text in a way that resembles real LLM tokenization.
+
+        This splits text into tokens that include:
+        - Whole words
+        - Punctuation as separate tokens
+        - Partial words/subwords occasionally
         """
-        words = response_text.split()
-        for i, word in enumerate(words):
-            await asyncio.sleep(WORD_DELAY)
-            # Yield word with space (except for the last word)
-            if i < len(words) - 1:
-                yield word + " "
+        # First split by whitespace and punctuation, keeping separators
+        tokens = re.findall(r"\S+|\s+", text)
+
+        result = []
+        for token in tokens:
+            if token.isspace():
+                continue  # Skip pure whitespace tokens
+
+            # For words longer than 4 characters, occasionally split into subwords
+            if len(token) > 6 and token.isalpha():
+                # 30% chance to split long words
+                if hash(token) % 10 < 3:  # Deterministic pseudo-random
+                    mid = len(token) // 2
+                    result.append(token[:mid])
+                    result.append(token[mid:])
+                    continue
+
+            # Split punctuation from words
+            if re.search(r"[^\w\s]", token):
+                parts = re.findall(r"\w+|[^\w\s]", token)
+                result.extend(parts)
             else:
-                yield word
+                result.append(token)
+
+        return result
+
+    def _create_thinking_process(self, prompt: str) -> str:
+        """
+        Generate a realistic thinking process based on the prompt.
+        """
+        thinking_templates = [
+            f'The user is asking "{prompt}". I should provide a helpful response.',
+            f'Let me think about "{prompt}". This seems like a straightforward question.',
+            f'The user wants to know about "{prompt}". I\'ll give them a clear answer.',
+            f'I need to respond to "{prompt}" in a helpful way.',
+        ]
+
+        # Choose template based on prompt hash for consistency
+        template_idx = abs(hash(prompt)) % len(thinking_templates)
+        return thinking_templates[template_idx]
+
+    async def _stream_response(self, full_text: str) -> AsyncGenerator[str, None]:
+        """
+        Stream response token by token, simulating real Ollama API behavior.
+        """
+        tokens = self._tokenize_realistic(full_text)
+
+        for i, token in enumerate(tokens):
+            await asyncio.sleep(TOKEN_DELAY)
+
+            # Add space before token (except first token) if it's a word
+            if i > 0 and token.isalnum() and not tokens[i - 1].endswith("\n"):
+                yield " "
+                await asyncio.sleep(TOKEN_DELAY * 0.3)  # Shorter delay for spaces
+
+            yield token
 
     def generate(self, prompt: str, model: str = None) -> AsyncGenerator[str, None]:
         """
-        Generates mock text responses with streaming.
+        Generates mock text responses with realistic streaming behavior.
 
         Args:
-            prompt: The prompt to send to the model (ignored in mock).
-            model: The name of the model to use for generation (ignored in mock).
+            prompt: The prompt to send to the model.
+            model: The name of the model to use for generation.
 
         Returns:
-            AsyncGenerator yielding text chunks.
+            AsyncGenerator yielding text chunks that match real API format.
         """
+        # Create thinking process
+        thinking = self._create_thinking_process(prompt)
+
         # Custom responses for specific inputs
         custom_responses = {
-            "hello": "Hello! Nice to meet you!",
-            "hi": "Hi there! How are you doing?",
-            "test": "This is a test response from the mock client.",
-            "help": "I'm here to help! What would you like to know?",
-            "thanks": "You're welcome! Happy to help anytime.",
+            "hello": "Hello! 😊 How are you today? I'm here to help with anything you need!",
+            "hi": "Hi there! How are you doing? What can I assist you with?",
+            "test": "This is a test response from the mock client. Everything is working correctly!",
+            "help": "I'm here to help! What would you like to know? Feel free to ask me anything.",
+            "thanks": "You're very welcome! Happy to help anytime. Is there anything else you need?",
         }
 
-        # Check for custom responses
+        # Check for custom responses first
+        response_text = None
         for key, response in custom_responses.items():
-            if prompt.lower().strip() == key.lower():
-                return self._stream_response(response)
+            if key in prompt.lower():
+                response_text = response
+                break
 
-        # Default mock response
-        response = self.mock_responses[self.response_index % len(self.mock_responses)]
-        self.response_index += 1
+        # If no custom response, use cycling responses
+        if not response_text:
+            response_text = self.mock_responses[
+                self.response_index % len(self.mock_responses)
+            ]
+            self.response_index += 1
 
-        full_response = f"{response}\n\n(Mock response to: {prompt[:30]}{'...' if len(prompt) > 30 else ''})"
+        # Construct full response with thinking tags (similar to real API)
+        full_response = f"<think>\n{thinking}\n</think>\n\n{response_text}"
 
         return self._stream_response(full_response)
