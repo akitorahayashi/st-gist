@@ -3,7 +3,7 @@ import re
 from typing import AsyncGenerator
 
 # Streaming configuration
-TOKEN_DELAY = 0.05  # Delay between tokens (seconds)
+TOKEN_DELAY = 0.1  # Faster delay between tokens (seconds) - reduced from 0.07
 
 
 class MockOllamaApiClient:
@@ -29,30 +29,44 @@ class MockOllamaApiClient:
         - Whole words
         - Punctuation as separate tokens
         - Partial words/subwords occasionally
+        - Keep think tags intact for proper processing
         """
-        # First split by whitespace and punctuation, keeping separators
-        tokens = re.findall(r"\S+|\s+", text)
-
+        # Special handling for think tags to keep them intact
+        think_pattern = r'(<think>|</think>)'
+        parts = re.split(think_pattern, text)
+        
         result = []
-        for token in tokens:
-            if token.isspace():
-                continue  # Skip pure whitespace tokens
+        for part in parts:
+            if part in ['<think>', '</think>']:
+                # Keep think tags as single tokens
+                result.append(part)
+                continue
+            
+            if not part.strip():
+                continue
+                
+            # First split by whitespace and punctuation, keeping separators
+            tokens = re.findall(r"\S+|\s+", part)
 
-            # For words longer than 4 characters, occasionally split into subwords
-            if len(token) > 6 and token.isalpha():
-                # 30% chance to split long words
-                if hash(token) % 10 < 3:  # Deterministic pseudo-random
-                    mid = len(token) // 2
-                    result.append(token[:mid])
-                    result.append(token[mid:])
-                    continue
+            for token in tokens:
+                if token.isspace():
+                    continue  # Skip pure whitespace tokens
 
-            # Split punctuation from words
-            if re.search(r"[^\w\s]", token):
-                parts = re.findall(r"\w+|[^\w\s]", token)
-                result.extend(parts)
-            else:
-                result.append(token)
+                # For words longer than 4 characters, occasionally split into subwords
+                if len(token) > 6 and token.isalpha():
+                    # 30% chance to split long words
+                    if hash(token) % 10 < 3:  # Deterministic pseudo-random
+                        mid = len(token) // 2
+                        result.append(token[:mid])
+                        result.append(token[mid:])
+                        continue
+
+                # Split punctuation from words (except for think tags)
+                if re.search(r"[^\w\s]", token) and token not in ['<think>', '</think>']:
+                    parts_inner = re.findall(r"\w+|[^\w\s]", token)
+                    result.extend(parts_inner)
+                else:
+                    result.append(token)
 
         return result
 
@@ -60,15 +74,23 @@ class MockOllamaApiClient:
         """
         Generate a realistic thinking process based on the prompt.
         """
+        # Shorter thinking templates for faster testing
         thinking_templates = [
-            f'The user is asking "{prompt}". I should provide a helpful response.',
-            f'Let me think about "{prompt}". This seems like a straightforward question.',
-            f'The user wants to know about "{prompt}". I\'ll give them a clear answer.',
-            f'I need to respond to "{prompt}" in a helpful way.',
+            '''Starting analysis.
+First, I need to identify the main points of the provided content.
+Next, I'll organize and structure the important information.
+Finally, I'll create a concise and understandable summary.
+Thinking process complete.''',
+            '''Breaking down the task.
+Step 1: Understand the content overview
+Step 2: Extract key points
+Step 3: Organize in logical flow
+Step 4: Generate clear summary
+Ready to proceed.''',
         ]
 
         # Choose template based on prompt hash for consistency
-        template_idx = abs(hash(prompt)) % len(thinking_templates)
+        template_idx = abs(hash(prompt[:100])) % len(thinking_templates)  # Use only first 100 chars of prompt
         return thinking_templates[template_idx]
 
     async def _stream_response(self, full_text: str) -> AsyncGenerator[str, None]:

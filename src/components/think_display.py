@@ -11,8 +11,10 @@ def render_think_display(show_thinking: bool = False):
 
     # Get current thinking content from session state
     thinking_content = st.session_state.get("current_thinking", "")
+    thinking_complete = st.session_state.get("thinking_complete", False)
 
     if not thinking_content.strip():
+        st.markdown("⏳ AIが思考中...")
         return
 
     # Style for thinking display
@@ -50,10 +52,14 @@ def render_think_display(show_thinking: bool = False):
     )
 
     # Display thinking content
+    header_text = "🤔 AI の思考過程"
+    if thinking_complete:
+        header_text += " (完了 - チャットページに遷移中...)"
+    
     st.markdown(
         f"""
         <div class="thinking-container">
-            <div class="thinking-header">🤔 AI の思考過程</div>
+            <div class="thinking-header">{header_text}</div>
             <div class="thinking-content">{thinking_content}</div>
         </div>
         """,
@@ -87,6 +93,7 @@ def extract_think_content(text: str) -> tuple[str, str]:
 def update_thinking_content(new_chunk: str) -> bool:
     """
     Update thinking content in session state with new streaming chunk.
+    This version extracts content even before the closing </think> tag appears.
 
     Args:
         new_chunk: New text chunk from streaming
@@ -94,29 +101,41 @@ def update_thinking_content(new_chunk: str) -> bool:
     Returns:
         bool: True if thinking tags are complete (</think> detected)
     """
-    current_buffer = st.session_state.get("thinking_buffer", "")
-    current_buffer += new_chunk
-    st.session_state.thinking_buffer = current_buffer
+    # Initialize session state keys if they don't exist
+    if "thinking_buffer" not in st.session_state:
+        st.session_state["thinking_buffer"] = ""
+    if "thinking_complete" not in st.session_state:
+        st.session_state["thinking_complete"] = False
+    if "current_thinking" not in st.session_state:
+        st.session_state["current_thinking"] = ""
 
-    # Extract complete thinking content
-    thinking_content, _ = extract_think_content(current_buffer)
+    st.session_state["thinking_buffer"] += new_chunk
+    buffer = st.session_state["thinking_buffer"]
 
+    # Extract all think content including multiple sections
+    thinking_content, _ = extract_think_content(buffer)
+    
+    # Update current thinking content
     if thinking_content:
-        st.session_state.current_thinking = thinking_content
+        st.session_state["current_thinking"] = thinking_content
 
-    # Check if thinking is complete (</think> tag found)
-    thinking_complete = "</think>" in current_buffer
-    if thinking_complete:
-        st.session_state.thinking_complete = True
+    # Check if we have at least one complete think section
+    complete_sections = buffer.count("<think>") <= buffer.count("</think>")
+    has_complete_section = "<think>" in buffer and "</think>" in buffer
+    
+    if has_complete_section and complete_sections:
+        st.session_state["thinking_complete"] = True
+    else:
+        st.session_state["thinking_complete"] = False
 
-    return thinking_complete
+    return st.session_state.get("thinking_complete", False)
 
 
 def clear_thinking_content():
     """Clear thinking content from session state"""
-    st.session_state.current_thinking = ""
-    st.session_state.thinking_buffer = ""
-    st.session_state.thinking_complete = False
+    st.session_state["current_thinking"] = ""
+    st.session_state["thinking_buffer"] = ""
+    st.session_state["thinking_complete"] = False
 
 
 def is_inside_think_tags(text: str) -> bool:

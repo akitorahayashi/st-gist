@@ -4,6 +4,7 @@ import streamlit as st
 
 from src.components.think_display import (
     clear_thinking_content,
+    extract_think_content,
     render_think_display,
     update_thinking_content,
 )
@@ -138,25 +139,6 @@ def render_url_input_form():
     button_text = "要約中..." if is_processing else "要約を開始"
     button_disabled = is_processing
 
-    # Black button with dynamic state
-    if st.button(button_text, use_container_width=True, disabled=button_disabled):
-        if url.strip():
-            try:
-                # Validate URL before processing
-                scraping_service = ScrapingService()
-                scraping_service.validate_url(url.strip())
-                # Clear previous thinking content
-                clear_thinking_content()
-                # Set processing state
-                st.session_state.processing = True
-                st.rerun()
-            except ValueError as e:
-                st.session_state.last_error = f"{str(e)}"
-                st.rerun()
-        else:
-            st.session_state.last_error = "URLを入力してください"
-            st.rerun()
-
     # Thinking process toggle (always visible)
     st.markdown("<br>", unsafe_allow_html=True)
     show_thinking = st.toggle(
@@ -165,115 +147,134 @@ def render_url_input_form():
         help="AIの思考過程をリアルタイムで表示します",
     )
 
-    # Render thinking display if toggled on
-    render_think_display(show_thinking)
+    # Placeholder for real-time thinking display
+    thinking_placeholder = st.empty()
 
-    # Handle processing when button was clicked
-    if st.session_state.get("processing", False):
+    # --- NEW ARCHITECTURE ---
+
+    # Step 1: Button click to start the whole process
+    if st.button(button_text, use_container_width=True, disabled=button_disabled):
         if url.strip():
             try:
-                # Store URL in session state
+                # Validate URL and set initial state
+                ScrapingService().validate_url(url.strip())
+                clear_thinking_content()
+                st.session_state.processing = True
                 st.session_state.target_url = url.strip()
+                st.session_state.processing_step = "scrape"  # Start with scraping
+                st.rerun()
+            except ValueError as e:
+                st.session_state.last_error = f"{str(e)}"
+                st.rerun()
+        else:
+            st.session_state.last_error = "URLを入力してください"
+            st.rerun()
 
-                # Scrape the webpage
-                scraping_service = ScrapingService()
-                scraped_content = scraping_service.scrape(url.strip())
+    # Main processing block, driven by session state
+    if is_processing:
+        step = st.session_state.get("processing_step")
 
-                # Generate summary using existing ollama client with streaming
+        try:
+            if step == "scrape":
+                with st.spinner("ウェブページを読み込んでいます..."):
+                    st.session_state.scraped_content = ScrapingService().scrape(
+                        st.session_state.target_url
+                    )
+                st.session_state.processing_step = "summarize_init"
+                st.rerun()
+
+            elif step == "summarize_init":
                 if "ollama_client" in st.session_state:
                     summarization_service = SummarizationService(
                         st.session_state.ollama_client
                     )
+                    truncated_content = st.session_state.scraped_content[:10000]
+                    prompt = summarization_service._build_prompt(truncated_content)
 
-                    # Prepare for streaming summary
-                    summary_parts = []
-                    clear_thinking_content()
-
-                    # Create an async function to handle streaming
-                    async def stream_summary():
-                        truncated_content = scraped_content[:10000]  # Max chars
-                        prompt = summarization_service._build_prompt(truncated_content)
-
-                        chunk_count = 0
-                        async for chunk in st.session_state.ollama_client.generate(
-                            prompt
-                        ):
-                            summary_parts.append(chunk)
-                            chunk_count += 1
-
-                            # Update thinking content in real-time if toggle is on
-                            if st.session_state.get("show_thinking_toggle", False):
-                                thinking_complete = update_thinking_content(chunk)
-
-                                # Trigger UI update every 10 chunks or if thinking complete
-                                if chunk_count % 10 == 0 or thinking_complete:
-                                    st.rerun()
-
-                                # Check if thinking is complete and navigate to query page
-                                if thinking_complete:
-                                    # Short delay to show final thinking content
-                                    import asyncio
-
-                                    await asyncio.sleep(0.5)
-
-                                    # Set navigation flag
-                                    st.session_state.should_navigate_to_chat = True
-                                    return "".join(summary_parts).strip()
-
-                        return "".join(summary_parts).strip()
-
-                    # Run the streaming summary
-                    summary = asyncio.run(stream_summary())
-                    st.session_state.page_summary = summary
+                    st.session_state.summary_iterator = (
+                        st.session_state.ollama_client.generate(prompt)
+                    )
+                    st.session_state.summary_parts = []
+                    st.session_state.processing_step = "summarize_streaming"
+                    st.rerun()
                 else:
-                    st.session_state.page_summary = "要約を生成できませんでした。"
+                    raise SummarizationServiceError("Ollama client not found.")
 
-                # Reset messages for new session
+            elif step == "summarize_streaming":
+                # Display thinking container if toggled
+                if show_thinking:
+                    with thinking_placeholder.container():
+                        render_think_display(True)
+
+                try:
+                    # Get or create the event loop for the current thread
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:  # 'RuntimeError: There is no current event loop...'
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                try:
+                    chunk = loop.run_until_complete(
+                        st.session_state.summary_iterator.__anext__()
+                    )
+                    st.session_state.summary_parts.append(chunk)
+
+                    # Update thinking content for display
+                    if show_thinking:
+                        update_thinking_content(chunk)
+
+                    # Show current accumulated response
+                    accumulated_text = ''.join(st.session_state.summary_parts)
+                    st.write("**Current Response:**")
+                    st.write(accumulated_text)
+
+                    # Continue with next chunk
+                    st.rerun()
+
+                except StopAsyncIteration:
+                    # Stream ended, finish processing
+                    st.session_state.processing_step = "summarize_finish"
+                    st.rerun()
+
+            elif step == "summarize_finish":
+                summary_with_tags = "".join(st.session_state.summary_parts)
+                _, cleaned_summary = extract_think_content(summary_with_tags)
+                st.session_state.page_summary = cleaned_summary
+
+                # Show final result on URL input page
+                st.success("要約完了!")
+                st.write("**最終要約:**")
+                st.write(cleaned_summary)
+
+                # Reset session for the chat page
                 if "messages" in st.session_state:
                     st.session_state.messages = []
 
-                # Clear processing state but don't navigate to chat yet
-                # Navigation will happen when think tags are complete
-                st.session_state.processing = False
+                # Clean up processing state
+                keys_to_delete = [
+                    "processing",
+                    "processing_step",
+                    "target_url", 
+                    "scraped_content",
+                    "summary_iterator",
+                    "summary_parts",
+                ]
+                for key in keys_to_delete:
+                    if key in st.session_state:
+                        del st.session_state[key]
 
-                # Check if we should navigate based on thinking completion or toggle state
-                should_navigate = (
-                    not st.session_state.get(
-                        "show_thinking_toggle", False
-                    )  # Toggle is off
-                    or st.session_state.get(
-                        "thinking_complete", False
-                    )  # Thinking is complete
-                    or st.session_state.get(
-                        "should_navigate_to_chat", False
-                    )  # Navigation flag set
-                )
+                clear_thinking_content()
 
-                if should_navigate:
-                    # Clean up navigation flag
-                    if "should_navigate_to_chat" in st.session_state:
-                        del st.session_state.should_navigate_to_chat
+                # Manual navigation button instead of auto-navigation
+                if st.button("チャットページに移動"):
                     st.session_state.show_chat = True
                     st.rerun()
 
-            except ValueError as e:
-                st.session_state.processing = False
-                st.session_state.last_error = f"エラー: {str(e)}"
-                st.rerun()
-            except SummarizationServiceError as e:
-                st.session_state.processing = False
-                st.session_state.last_error = f"要約エラー: {str(e)}"
-                st.rerun()
-            except Exception as e:
-                st.session_state.processing = False
-                st.session_state.last_error = (
-                    f"予期しないエラーが発生しました: {str(e)}"
-                )
-                st.rerun()
-        else:
-            # Show error if no URL when processing started
+        except (ValueError, SummarizationServiceError, Exception) as e:
             st.session_state.processing = False
-            st.session_state.last_error = "URLを入力してください"
+            st.session_state.last_error = f"エラーが発生しました: {str(e)}"
+            # Clean up potentially problematic state
+            st.session_state.pop("processing_step", None)
             st.rerun()
 
     # Close centered content wrapper

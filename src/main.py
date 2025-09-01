@@ -21,21 +21,25 @@ def main():
 
 
 def initialize_session():
+    # Client should be initialized regardless of the page
+    if "ollama_client" not in st.session_state:
+        is_debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
+        if is_debug:
+            import sys
+
+            sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+            from dev.mocks.mock_ollama_client import MockOllamaApiClient
+
+            st.session_state.ollama_client = MockOllamaApiClient()
+        else:
+            st.session_state.ollama_client = OllamaApiClient()
+
+    # Initialize messages for chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # Initialize conversation service only when needed (on chat page)
     if st.session_state.get("show_chat", False):
-        if "ollama_client" not in st.session_state:
-            is_debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
-            if is_debug:
-                import sys
-
-                sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-                from dev.mocks.mock_ollama_client import MockOllamaApiClient
-
-                st.session_state.ollama_client = MockOllamaApiClient()
-            else:
-                st.session_state.ollama_client = OllamaApiClient()
         if (
             "conversation_service" not in st.session_state
             and "ollama_client" in st.session_state
