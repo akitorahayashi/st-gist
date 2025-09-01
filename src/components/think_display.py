@@ -54,7 +54,7 @@ def render_think_display(show_thinking: bool = False):
     header_text = "🤔 AI の思考過程"
     if thinking_complete:
         header_text += " (完了 - チャットページに遷移中...)"
-    
+
     st.markdown(
         f"""
         <div class="thinking-container">
@@ -113,13 +113,13 @@ def update_thinking_content(new_chunk: str) -> bool:
 
     # Debug: Show when we find think tags
     if "<think>" in new_chunk:
-        st.write(f"🔍 Found <think> tag in chunk")
+        st.write("🔍 Found <think> tag in chunk")
     if "</think>" in new_chunk:
-        st.write(f"🔍 Found </think> tag in chunk - should complete!")
+        st.write("🔍 Found </think> tag in chunk - should complete!")
 
     # Extract all think content including multiple sections
     thinking_content, _ = extract_think_content(buffer)
-    
+
     # Update current thinking content
     if thinking_content:
         st.session_state["current_thinking"] = thinking_content
@@ -127,10 +127,12 @@ def update_thinking_content(new_chunk: str) -> bool:
     # Check if we have at least one complete think section
     complete_sections = buffer.count("<think>") <= buffer.count("</think>")
     has_complete_section = "<think>" in buffer and "</think>" in buffer
-    
+
     if has_complete_section and complete_sections:
         st.session_state["thinking_complete"] = True
-        st.write(f"✅ Thinking marked as complete! Buffer contains: {buffer.count('<think>')} <think> and {buffer.count('</think>')} </think>")
+        st.write(
+            f"✅ Thinking marked as complete! Buffer contains: {buffer.count('<think>')} <think> and {buffer.count('</think>')} </think>"
+        )
     else:
         st.session_state["thinking_complete"] = False
 

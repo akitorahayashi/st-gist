@@ -32,19 +32,19 @@ class MockOllamaApiClient:
         - Keep think tags intact for proper processing
         """
         # Special handling for think tags to keep them intact
-        think_pattern = r'(<think>|</think>)'
+        think_pattern = r"(<think>|</think>)"
         parts = re.split(think_pattern, text)
-        
+
         result = []
         for part in parts:
-            if part in ['<think>', '</think>']:
+            if part in ["<think>", "</think>"]:
                 # Keep think tags as single tokens
                 result.append(part)
                 continue
-            
+
             if not part.strip():
                 continue
-                
+
             # First split by whitespace and punctuation, keeping separators
             tokens = re.findall(r"\S+|\s+", part)
 
@@ -62,7 +62,10 @@ class MockOllamaApiClient:
                         continue
 
                 # Split punctuation from words (except for think tags)
-                if re.search(r"[^\w\s]", token) and token not in ['<think>', '</think>']:
+                if re.search(r"[^\w\s]", token) and token not in [
+                    "<think>",
+                    "</think>",
+                ]:
                     parts_inner = re.findall(r"\w+|[^\w\s]", token)
                     result.extend(parts_inner)
                 else:
@@ -76,21 +79,23 @@ class MockOllamaApiClient:
         """
         # Shorter thinking templates for faster testing
         thinking_templates = [
-            '''Starting analysis.
+            """Starting analysis.
 First, I need to identify the main points of the provided content.
 Next, I'll organize and structure the important information.
 Finally, I'll create a concise and understandable summary.
-Thinking process complete.''',
-            '''Breaking down the task.
+Thinking process complete.""",
+            """Breaking down the task.
 Step 1: Understand the content overview
 Step 2: Extract key points
 Step 3: Organize in logical flow
 Step 4: Generate clear summary
-Ready to proceed.''',
+Ready to proceed.""",
         ]
 
         # Choose template based on prompt hash for consistency
-        template_idx = abs(hash(prompt[:100])) % len(thinking_templates)  # Use only first 100 chars of prompt
+        template_idx = abs(hash(prompt[:100])) % len(
+            thinking_templates
+        )  # Use only first 100 chars of prompt
         return thinking_templates[template_idx]
 
     async def _stream_response(self, full_text: str) -> AsyncGenerator[str, None]:

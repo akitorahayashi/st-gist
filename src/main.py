@@ -11,7 +11,7 @@ from src.services.conversation_service import ConversationService
 def main():
     initialize_session()
 
-    # Route between URL input and query pages
+    # Complete component switching - only one renders at a time
     if st.session_state.get("show_chat", False):
         st.set_page_config(layout="wide")
         render_query_page()
