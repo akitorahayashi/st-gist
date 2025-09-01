@@ -51,8 +51,8 @@ exclude = '''
     | env
     | build
     | dist
-    | [^/]*/(bin|lib|share|etc)/.*
-    | [^/]*/pyvenv\.cfg
+    | .*/(bin|lib|share|etc)
+    | .*/pyvenv\.cfg
 )/
 '''
 
