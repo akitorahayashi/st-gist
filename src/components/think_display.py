@@ -14,8 +14,7 @@ def render_think_display(show_thinking: bool = False):
     thinking_complete = st.session_state.get("thinking_complete", False)
 
     if not thinking_content.strip():
-        st.markdown("⏳ AIが思考中...")
-        return
+        return  # Don't show anything if no content
 
     # Style for thinking display
     st.markdown(
@@ -112,6 +111,12 @@ def update_thinking_content(new_chunk: str) -> bool:
     st.session_state["thinking_buffer"] += new_chunk
     buffer = st.session_state["thinking_buffer"]
 
+    # Debug: Show when we find think tags
+    if "<think>" in new_chunk:
+        st.write(f"🔍 Found <think> tag in chunk")
+    if "</think>" in new_chunk:
+        st.write(f"🔍 Found </think> tag in chunk - should complete!")
+
     # Extract all think content including multiple sections
     thinking_content, _ = extract_think_content(buffer)
     
@@ -125,6 +130,7 @@ def update_thinking_content(new_chunk: str) -> bool:
     
     if has_complete_section and complete_sections:
         st.session_state["thinking_complete"] = True
+        st.write(f"✅ Thinking marked as complete! Buffer contains: {buffer.count('<think>')} <think> and {buffer.count('</think>')} </think>")
     else:
         st.session_state["thinking_complete"] = False
 

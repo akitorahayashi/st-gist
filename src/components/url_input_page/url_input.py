@@ -139,23 +139,7 @@ def render_url_input_form():
     button_text = "要約中..." if is_processing else "要約を開始"
     button_disabled = is_processing
 
-    # Thinking process toggle (always visible)
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Store current toggle state separately to avoid iterator conflicts
-    current_show_thinking = st.session_state.get("show_thinking_toggle", False)
-    show_thinking = st.toggle(
-        "🤔 思考の過程を表示する",
-        key="show_thinking_toggle",
-        help="AIの思考過程をリアルタイムで表示します",
-    )
-    
-    # Update thinking display state only if changed and not processing
-    if not is_processing and current_show_thinking != show_thinking:
-        st.session_state["show_thinking_display"] = show_thinking
-    elif is_processing:
-        # During processing, use the stored display state
-        show_thinking = st.session_state.get("show_thinking_display", show_thinking)
 
     # Placeholder for real-time thinking display
     thinking_placeholder = st.empty()
@@ -211,10 +195,13 @@ def render_url_input_form():
                     raise SummarizationServiceError("Ollama client not found.")
 
             elif step == "summarize_streaming":
-                # Display thinking container if toggled
-                if show_thinking:
+                # Display thinking content if available (like Query Page)
+                thinking_content = st.session_state.get("current_thinking", "")
+                if thinking_content.strip():
                     with thinking_placeholder.container():
-                        render_think_display(True)
+                        st.markdown("### 🤔 AI の思考過程")
+                        with st.expander("思考プロセス", expanded=True):
+                            st.markdown(thinking_content)
 
                 try:
                     # Get or create the event loop for the current thread
@@ -229,15 +216,15 @@ def render_url_input_form():
                     )
                     st.session_state.summary_parts.append(chunk)
 
-                    # Update thinking content for display
-                    if show_thinking:
-                        thinking_complete = update_thinking_content(chunk)
-                        
-                        # Check if thinking is complete - navigate when thinking ends
-                        if thinking_complete:
-                            st.session_state.processing_step = "summarize_finish"
-                            st.rerun()
-                            return
+                    # Always update thinking content
+                    thinking_complete = update_thinking_content(chunk)
+                    
+                    # Check if thinking is complete - navigate immediately when thinking ends
+                    if thinking_complete:
+                        st.write("🎉 思考プロセス完了 - チャットページに遷移中...")
+                        st.session_state.processing_step = "summarize_finish"
+                        st.rerun()
+                        return
 
                     # Show current accumulated response
                     accumulated_text = ''.join(st.session_state.summary_parts)
@@ -248,7 +235,8 @@ def render_url_input_form():
                     st.rerun()
 
                 except StopAsyncIteration:
-                    # Stream ended, finish processing (fallback if thinking didn't complete)
+                    # Stream ended, finish processing (should not reach here if thinking works)
+                    st.write("⚠️ ストリーム終了 - フォールバック遷移")
                     st.session_state.processing_step = "summarize_finish"
                     st.rerun()
 
