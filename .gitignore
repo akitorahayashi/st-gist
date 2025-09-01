@@ -37,7 +37,11 @@ htmlcov/
 # IDEs
 .idea/
 .vscode/
+
+# claude
 .claude/
+.serena/
+
 
 # Logs
 *.log
