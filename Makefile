@@ -31,8 +31,8 @@ help: ## Display this help message
 
 .PHONY: setup
 setup: ## Project initial setup: install dependencies and create .env file
-	@echo "🐍 Installing python dependencies with Poetry..."
-	@poetry install --no-root
+	@echo "🐍 Installing python dependencies with uv..."
+	@uv sync --extra dev
 	@echo "📄 Creating environment file..."
 	@if [ ! -f .env ]; then \
 		echo "Creating .env from .env.example..." ; \
@@ -55,7 +55,7 @@ run: ## Launch the Streamlit application with development port
 		exit 1; \
 	fi
 	@echo "🚀 Starting Streamlit app on development port..."
-	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && PYTHONPATH=. STREAMLIT_SERVER_PORT=$${DEV_PORT:-8503} poetry run streamlit run $(STREAMLIT_APP_FILE)
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && PYTHONPATH=. STREAMLIT_SERVER_PORT=$${DEV_PORT:-8503} streamlit run $(STREAMLIT_APP_FILE)
 
 .PHONY: run-prod
 run-prod: ## Launch the Streamlit application with production port
@@ -64,7 +64,7 @@ run-prod: ## Launch the Streamlit application with production port
 		exit 1; \
 	fi
 	@echo "🚀 Starting Streamlit app on production port..."
-	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && PYTHONPATH=. STREAMLIT_SERVER_PORT=$${HOST_PORT:-8501} poetry run streamlit run $(STREAMLIT_APP_FILE)
+	@export $$(cat .env | grep -v '^#' | grep -v '^$$' | xargs) && PYTHONPATH=. STREAMLIT_SERVER_PORT=$${HOST_PORT:-8501} streamlit run $(STREAMLIT_APP_FILE)
 
 # ==============================================================================
 # CODE QUALITY
@@ -73,14 +73,14 @@ run-prod: ## Launch the Streamlit application with production port
 .PHONY: format
 format: ## Automatically format code using Black and Ruff
 	@echo "🎨 Formatting code with black and ruff..."
-	@poetry run black .
-	@poetry run ruff check . --fix
+	@black .
+	@ruff check . --fix
 
 .PHONY: lint
 lint: ## Perform static code analysis (check) using Black and Ruff
 	@echo "🔬 Linting code with black and ruff..."
-	@poetry run black --check .
-	@poetry run ruff check .
+	@black --check .
+	@ruff check .
 
 # ==============================================================================
 # TESTING
@@ -92,19 +92,19 @@ test: unit-test build-test e2e-test intg-test ## Run the full test suite
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
-	@poetry run python -m pytest tests/unit-test -v
+	@python -m pytest tests/unit-test -v
 
 .PHONY: intg-test
 intg-test: ## Run integration tests with mocks (no external dependencies)
 	@echo "Running integration tests with mocks..."
-	@poetry run python -m pytest tests/intg -v
+	@python -m pytest tests/intg -v
 
 .PHONY: build-test
 build-test: ## Run build tests
 	@echo "Running build tests..."
-	@poetry run python -m pytest tests/build -s
+	@python -m pytest tests/build -s
 
 .PHONY: e2e-test
 e2e-test: ## Run end-to-end tests
 	@echo "Running end-to-end tests..."
-	@poetry run python -m pytest tests/e2e -s
+	@python -m pytest tests/e2e -s

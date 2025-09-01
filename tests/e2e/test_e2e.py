@@ -29,8 +29,6 @@ class TestE2E:
 
         process = subprocess.Popen(
             [
-                "poetry",
-                "run",
                 "streamlit",
                 "run",
                 app_path,
@@ -132,8 +130,6 @@ class TestE2E:
 
         process = subprocess.Popen(
             [
-                "poetry",
-                "run",
                 "streamlit",
                 "run",
                 app_path,

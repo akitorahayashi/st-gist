@@ -21,8 +21,6 @@ class TestBuild:
         # Start Streamlit server in background
         process = subprocess.Popen(
             [
-                "poetry",
-                "run",
                 "streamlit",
                 "run",
                 app_path,

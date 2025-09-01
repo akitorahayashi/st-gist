@@ -9,7 +9,7 @@ This project is a web page summarization tool built with Streamlit. Its mission 
 ## Technology Stack and Environment
 
 -   **Language**: Python 3.12.11.
--   **Dependency Management**: Use Poetry for managing dependencies. All dependencies are defined in `pyproject.toml` and locked in `poetry.lock`.
+-   **Dependency Management**: Use uv for managing dependencies. All dependencies are defined in `pyproject.toml` and locked in `uv.lock`.
 -   **Primary Framework**: Streamlit is the core framework for the web application user interface.
 -   **Web Scraping**: Use `requests` for fetching web page content and `BeautifulSoup4` for parsing HTML.
 -   **AI Backend**: Interact with an Ollama API endpoint for language model operations. The endpoint and model name are configured via environment variables in a `.env` file.
