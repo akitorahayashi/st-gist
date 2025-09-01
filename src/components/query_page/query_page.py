@@ -11,16 +11,22 @@ def render_query_page():
     """Render query page with URL summary and chat functionality"""
     st.title("Query Page")
 
+    # Display thinking content if available
+    thinking_content = st.session_state.get("current_thinking", "")
+    if thinking_content.strip():
+        st.markdown("### 🤔 AI の思考過程")
+        with st.expander("思考プロセス", expanded=False):
+            st.markdown(thinking_content)
+
+    # Display summary content
+    summary_content = st.session_state.get("page_summary", "")
+    if summary_content.strip():
+        st.markdown("### 📝 要約コンテンツ")
+        st.markdown(summary_content)
+    
     # Show URL being analyzed
     if "target_url" in st.session_state:
-        st.markdown(f"**About:** {st.session_state.target_url}")
-
-        # Display summary directly
-        summary_content = st.session_state.get(
-            "page_summary",
-            "このページの要約を作成しました。以下が主な内容です：\n\n• ページのメインテーマと概要\n• 重要なポイントや情報\n• 構造や特徴的な要素",
-        )
-        st.markdown(summary_content)
+        st.markdown(f"**URL:** {st.session_state.target_url}")
 
         # Add divider before chat
         st.markdown("---")

@@ -141,11 +141,21 @@ def render_url_input_form():
 
     # Thinking process toggle (always visible)
     st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Store current toggle state separately to avoid iterator conflicts
+    current_show_thinking = st.session_state.get("show_thinking_toggle", False)
     show_thinking = st.toggle(
         "🤔 思考の過程を表示する",
         key="show_thinking_toggle",
         help="AIの思考過程をリアルタイムで表示します",
     )
+    
+    # Update thinking display state only if changed and not processing
+    if not is_processing and current_show_thinking != show_thinking:
+        st.session_state["show_thinking_display"] = show_thinking
+    elif is_processing:
+        # During processing, use the stored display state
+        show_thinking = st.session_state.get("show_thinking_display", show_thinking)
 
     # Placeholder for real-time thinking display
     thinking_placeholder = st.empty()
@@ -221,7 +231,13 @@ def render_url_input_form():
 
                     # Update thinking content for display
                     if show_thinking:
-                        update_thinking_content(chunk)
+                        thinking_complete = update_thinking_content(chunk)
+                        
+                        # Check if thinking is complete - navigate when thinking ends
+                        if thinking_complete:
+                            st.session_state.processing_step = "summarize_finish"
+                            st.rerun()
+                            return
 
                     # Show current accumulated response
                     accumulated_text = ''.join(st.session_state.summary_parts)
@@ -232,43 +248,41 @@ def render_url_input_form():
                     st.rerun()
 
                 except StopAsyncIteration:
-                    # Stream ended, finish processing
+                    # Stream ended, finish processing (fallback if thinking didn't complete)
                     st.session_state.processing_step = "summarize_finish"
                     st.rerun()
 
             elif step == "summarize_finish":
                 summary_with_tags = "".join(st.session_state.summary_parts)
-                _, cleaned_summary = extract_think_content(summary_with_tags)
+                thinking_content, cleaned_summary = extract_think_content(summary_with_tags)
+                
+                # Store both thinking and summary content for Query Page
                 st.session_state.page_summary = cleaned_summary
-
-                # Show final result on URL input page
-                st.success("要約完了!")
-                st.write("**最終要約:**")
-                st.write(cleaned_summary)
+                if thinking_content.strip():
+                    st.session_state.current_thinking = thinking_content
 
                 # Reset session for the chat page
                 if "messages" in st.session_state:
                     st.session_state.messages = []
 
-                # Clean up processing state
+                # Clean up processing state (but keep thinking content)
                 keys_to_delete = [
                     "processing",
-                    "processing_step",
-                    "target_url", 
+                    "processing_step", 
+                    "target_url",
                     "scraped_content",
                     "summary_iterator",
                     "summary_parts",
+                    "thinking_buffer",  # Clean up buffer but keep current_thinking
+                    "thinking_complete",
                 ]
                 for key in keys_to_delete:
                     if key in st.session_state:
                         del st.session_state[key]
 
-                clear_thinking_content()
-
-                # Manual navigation button instead of auto-navigation
-                if st.button("チャットページに移動"):
-                    st.session_state.show_chat = True
-                    st.rerun()
+                # Navigate to chat page
+                st.session_state.show_chat = True
+                st.rerun()
 
         except (ValueError, SummarizationServiceError, Exception) as e:
             st.session_state.processing = False
