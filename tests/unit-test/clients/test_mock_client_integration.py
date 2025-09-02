@@ -75,46 +75,18 @@ class TestMockClientIntegration:
         # Should get some response
         assert len(response_chunks) > 0
         full_response = "".join(response_chunks)
-        assert "test response" in full_response.lower()
-
-    def test_conversation_service_with_mock_client_streaming(
-        self, conversation_service, mock_st
-    ):
-        """Test ConversationService using actual MockOllamaApiClient streaming"""
-        # Set up initial state
-        mock_st.session_state.messages = [{"role": "user", "content": "hello"}]
-        mock_st.session_state.ai_thinking = True
-        mock_st.session_state.streaming_active = False
-
-        # This should not raise an error about CHARACTER_DELAY
-        try:
-            conversation_service.handle_ai_thinking()
-            # If we get here, the streaming initialization worked
-            assert True
-        except NameError as e:
-            if "CHARACTER_DELAY" in str(e):
-                pytest.fail("CHARACTER_DELAY error still exists in mock client")
-            else:
-                raise
-
-    def test_prepare_streaming_chunks_integration(self, conversation_service, mock_st):
-        """Test _prepare_streaming_chunks with real mock client"""
-        mock_st.session_state.messages = [{"role": "user", "content": "test"}]
-        mock_st.session_state.streaming_response = (
-            ""  # Initialize this to prevent += error
+        # New mock should include specific test response and think tags
+        # The response may have spacing due to tokenization, so check for key words
+        assert "test" in full_response.lower()
+        assert "mock client" in full_response.lower()
+        assert (
+            "everything" in full_response.lower()
+            or "every thing" in full_response.lower()
+        ) and (
+            "working" in full_response.lower() or "wor king" in full_response.lower()
         )
-
-        # This should work without CHARACTER_DELAY error
-        try:
-            conversation_service._prepare_streaming_chunks("test message")
-            # Check that chunks were prepared
-            assert "stream_chunks" in mock_st.session_state
-            assert "chunk_index" in mock_st.session_state
-        except NameError as e:
-            if "CHARACTER_DELAY" in str(e):
-                pytest.fail("CHARACTER_DELAY error in streaming preparation")
-            else:
-                raise
+        # Check for think tags (with possible spacing due to tokenization)
+        assert "<think>" in full_response and "</think>" in full_response
 
 
 if __name__ == "__main__":

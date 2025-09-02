@@ -91,3 +91,38 @@ class OllamaApiClient:
                 )
 
         return self._stream_response(prompt, model)
+
+    async def generate_once(self, prompt: str, model: str = None) -> str:
+        """
+        Generates a complete response from the Ollama API at once.
+        """
+        if model is None:
+            model = os.getenv("OLLAMA_MODEL")
+            if not model:
+                raise ValueError(
+                    "OLLAMA_MODEL is not configured in environment variables."
+                )
+
+        payload = {
+            "prompt": prompt,
+            "model_name": model,
+            "stream": False,
+        }
+
+        try:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(10.0, read=120.0)
+            ) as client:
+                response = await client.post(
+                    self.generate_endpoint,
+                    json=payload,
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data.get("response", "")
+        except httpx.RequestError as e:
+            logger.error(f"Ollama API request failed: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in Ollama API request: {e}")
+            raise

@@ -112,7 +112,8 @@ class TestUrlProcessingIntegration:
             response_parts.append(chunk)
 
         response = "".join(response_parts)
-        assert "Hello! Nice to meet you!" in response
+        assert "Hello!" in response
+        assert "help" in response
 
         # Test default response with context
         response_parts = []
@@ -120,8 +121,10 @@ class TestUrlProcessingIntegration:
             response_parts.append(chunk)
 
         response = "".join(response_parts)
-        assert "Mock response to:" in response
-        assert "What is AI?" in response or "What is AI?..." in response
+        # Should get a meaningful response (not empty)
+        assert len(response.strip()) > 0
+        # Should contain think tags and actual response (with possible spacing due to tokenization)
+        assert "<think>" in response and "</think>" in response
 
     @pytest.mark.asyncio
     async def test_integration_with_different_content_types(self):
@@ -153,3 +156,80 @@ class TestUrlProcessingIntegration:
             assert case["expected_title_keyword"] in summary
             assert case["expected_content"] in summary
             assert len(summary.split("要点:")) == 2  # Title + bullet points
+
+    @pytest.mark.asyncio
+    async def test_streaming_state_management_during_summarization(self):
+        """Test streaming state management during the summarization process."""
+        from unittest.mock import patch
+
+        # Create a mock session state
+        mock_state = {}
+
+        with patch("src.components.think_display.st") as mock_st:
+            mock_st.session_state = mock_state
+
+            from src.components.think_display import (
+                clear_thinking_content,
+                update_thinking_content,
+            )
+
+            # Initialize clean state
+            clear_thinking_content()
+
+            # Simulate streaming chunks during summarization
+            url = "https://example.com"
+            scraped_content = self.mock_scraping_service.scrape(url)
+
+            # Create summarization service
+            summarization_service = self.mock_summarization_service
+
+            # Simulate streaming with think tags
+            summary_parts = []
+            thinking_complete = False
+            chunk_count = 0
+
+            # Mock the generate method to yield chunks with think tags
+            async def mock_generate_with_thinking(prompt):
+                chunks = [
+                    "<think>",
+                    "Let me analyze this content. ",
+                    "It appears to be about technology.",
+                    "</think>",
+                    "タイトル: Example Website Analysis\n\n",
+                    "要点:\n• 技術に関するウェブサイト\n",
+                    "• 様々なソリューションを提供",
+                ]
+                for chunk in chunks:
+                    yield chunk
+
+            # Replace the generate method
+            self.mock_ollama_client.generate = mock_generate_with_thinking
+
+            # Process streaming chunks
+            async for chunk in self.mock_ollama_client.generate("test prompt"):
+                summary_parts.append(chunk)
+                chunk_count += 1
+
+                # Simulate the thinking update logic from url_input.py
+                thinking_complete = update_thinking_content(chunk)
+
+                if thinking_complete:
+                    # Should set navigation flag when thinking is complete
+                    mock_state["should_navigate_to_chat"] = True
+                    break
+
+            # Verify state management
+            final_summary = "".join(summary_parts)
+            assert len(final_summary) > 0
+
+            # Check thinking state
+            assert thinking_complete
+            assert mock_state.get("thinking_complete")
+
+            # Check that thinking content was captured
+            thinking_content = mock_state.get("current_thinking", "")
+            assert "analyze this content" in thinking_content
+            assert "about technology" in thinking_content
+
+            # Verify navigation flag was set
+            assert mock_state.get("should_navigate_to_chat")

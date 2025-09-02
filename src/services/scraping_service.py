@@ -44,7 +44,7 @@ class ScrapingService:
                 return True
         return False
 
-    def scrape(self, url: str, timeout=(10, 30)) -> str:
+    def scrape(self, url: str, timeout=(30, 90)) -> str:
         try:
             self.validate_url(url)
 
