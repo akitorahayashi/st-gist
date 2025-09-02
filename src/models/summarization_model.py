@@ -22,6 +22,7 @@ class SummarizationModel(SummarizationModelProtocol):
         self.summary = ""
         self.thinking = ""
         self.is_summarizing = False
+        self.last_error = None
 
     async def stream_summary(self, scraped_content: str):
         """
@@ -36,14 +37,10 @@ class SummarizationModel(SummarizationModelProtocol):
         # Import here to avoid circular imports
 
         conv_s = None
-        # Get conversation service from session state (needed for extract_think_content)
-        import streamlit as st
-
-        if "conversation_service" in st.session_state:
-            conv_s = st.session_state.get("conversation_service")
 
         # Set processing state
         self.is_summarizing = True
+        self.last_error = None
 
         truncated_content = scraped_content[:10000]
         prompt = self._build_prompt(truncated_content)
@@ -80,9 +77,9 @@ class SummarizationModel(SummarizationModelProtocol):
 
         except Exception as e:
             logger.error(f"Streaming summarization failed: {e}")
-            raise SummarizationModelError(
-                "要約のストリーミング生成に失敗しました。"
-            ) from e
+            error_msg = "要約のストリーミング生成に失敗しました。"
+            self.last_error = error_msg
+            raise SummarizationModelError(error_msg) from e
         finally:
             # Reset processing state
             self.is_summarizing = False
@@ -107,6 +104,7 @@ class SummarizationModel(SummarizationModelProtocol):
         self.summary = ""
         self.thinking = ""
         self.is_summarizing = False
+        self.last_error = None
 
     def _build_prompt(self, text: str) -> str:
         """Constructs the prompt for the summarization task."""

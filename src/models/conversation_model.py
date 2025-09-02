@@ -11,6 +11,7 @@ class ConversationModel(ConversationModelProtocol):
         self.client = client
         self.messages = []
         self.is_responding = False
+        self.last_error = None
 
     async def generate_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """
@@ -60,6 +61,7 @@ class ConversationModel(ConversationModelProtocol):
         """
         self.messages = []
         self.is_responding = False
+        self.last_error = None
 
     def should_respond(self) -> bool:
         """
@@ -95,7 +97,7 @@ class ConversationModel(ConversationModelProtocol):
 
     def limit_messages(self, max_messages=10):
         """
-        Limit the number of messages in session state.
+        Limit the number of messages stored in the model.
         """
-        if len(st.session_state.messages) > max_messages:
-            st.session_state.messages = st.session_state.messages[-max_messages:]
+        if len(self.messages) > max_messages:
+            self.messages = self.messages[-max_messages:]

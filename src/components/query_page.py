@@ -9,6 +9,9 @@ from src.models import ConversationModel
 
 def render_query_page():
     """Render query page with URL summary and chat functionality"""
+    # Clear all previous page components immediately
+    st.empty()
+    
     app_router = st.session_state.app_router
     conversation_model: ConversationModel = st.session_state.get("conversation_model")
 
@@ -49,11 +52,12 @@ def render_query_page():
         st.markdown("### 📝 要約コンテンツ")
         st.markdown(page_summary)
 
-    # Handle stream generation from scraped content
+    # Handle stream generation from scraped content - only run once
     if (
         summarization_model
         and scraped_content
         and not (page_summary or current_thinking)
+        and not summarization_model.is_summarizing
     ):
         try:
             # Use the new streaming method that yields content
@@ -69,7 +73,7 @@ def render_query_page():
 
             asyncio.run(handle_streaming())
         except Exception as e:
-            app_router.set_error(f"要約の生成中にエラーが発生しました: {str(e)}")
+            summarization_model.last_error = f"要約の生成中にエラーが発生しました: {str(e)}"
             st.rerun()
 
     # Add divider before chat if we have content
@@ -104,7 +108,7 @@ def render_query_page():
             conversation_model.add_ai_message(clean_response)
         except Exception as e:
             error_message = f"エラーが発生しました: {e}"
-            app_router.set_error(error_message)
+            conversation_model.last_error = error_message
             _, clean_error = conversation_model.extract_think_content(error_message)
             conversation_model.add_ai_message(clean_error)
         finally:

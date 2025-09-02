@@ -12,6 +12,7 @@ class ScrapingModel(ScrapingModelProtocol):
     def __init__(self):
         self.content = None
         self.is_scraping = False
+        self.last_error = None
 
     def validate_url(self, url: str) -> None:
         parsed = urlparse(url)
@@ -52,6 +53,8 @@ class ScrapingModel(ScrapingModelProtocol):
 
     def scrape(self, url: str, timeout=(30, 90)) -> str:
         self.is_scraping = True
+        self.last_error = None
+        
         try:
             self.validate_url(url)
 
@@ -64,7 +67,9 @@ class ScrapingModel(ScrapingModelProtocol):
                 )
                 response.raise_for_status()
             except requests.RequestException as e:
-                raise ValueError(f"コンテンツ取得に失敗しました: {e}") from e
+                error_msg = f"コンテンツ取得に失敗しました: {e}"
+                self.last_error = error_msg
+                raise ValueError(error_msg) from e
 
             # 明らかに非 HTML のレスポンスは早期リターン
             ctype = (response.headers.get("Content-Type") or "").lower()
@@ -87,7 +92,9 @@ class ScrapingModel(ScrapingModelProtocol):
         except Exception as e:
             # 予期しないエラーの場合
             if not isinstance(e, ValueError):
-                raise ValueError(f"予期しないエラーが発生しました: {str(e)}") from e
+                error_msg = f"予期しないエラーが発生しました: {str(e)}"
+                self.last_error = error_msg
+                raise ValueError(error_msg) from e
             raise
         finally:
             self.is_scraping = False
@@ -96,3 +103,4 @@ class ScrapingModel(ScrapingModelProtocol):
         """Reset the scraping model state."""
         self.content = None
         self.is_scraping = False
+        self.last_error = None

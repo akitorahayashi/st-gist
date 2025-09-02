@@ -51,3 +51,30 @@
     0%, 50%, 100% { opacity: 1; }
     25%, 75% { opacity: 0.5; }
 }
+
+/* Thinking display styles from think_display.py */
+.thinking-container {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.thinking-header {
+    font-weight: bold;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.thinking-content {
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
