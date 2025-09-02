@@ -1,13 +1,17 @@
+import asyncio
 import os
 import sys
+from unittest.mock import Mock
+
 import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock
 
 # Add project root to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+)
 
 from src.services.conversation_service import ConversationService
+
 
 @pytest.fixture
 def mock_client():
@@ -23,10 +27,12 @@ def mock_client():
     client.generate = mock_generate
     return client
 
+
 @pytest.fixture
 def conversation_service(mock_client):
     """Fixture for ConversationService."""
     return ConversationService(client=mock_client)
+
 
 class TestConversationService:
     """Test suite for ConversationService."""
@@ -36,14 +42,38 @@ class TestConversationService:
         service = ConversationService(mock_client)
         assert service.client == mock_client
 
-    @pytest.mark.parametrize("messages, is_ai_thinking, expected", [
-        ([], False, False),  # No messages
-        ([{"role": "ai", "content": "Hello"}], False, False),  # Last message not from user
-        ([{"role": "user", "content": "Hi"}], True, False),  # AI is already thinking
-        ([{"role": "user", "content": "Hi"}], False, True),  # Valid case to start thinking
-        ([{"role": "ai", "content": "Hello"}, {"role": "user", "content": "Question"}], False, True) # Valid case
-    ])
-    def test_should_start_ai_thinking(self, conversation_service, messages, is_ai_thinking, expected):
+    @pytest.mark.parametrize(
+        "messages, is_ai_thinking, expected",
+        [
+            ([], False, False),  # No messages
+            (
+                [{"role": "ai", "content": "Hello"}],
+                False,
+                False,
+            ),  # Last message not from user
+            (
+                [{"role": "user", "content": "Hi"}],
+                True,
+                False,
+            ),  # AI is already thinking
+            (
+                [{"role": "user", "content": "Hi"}],
+                False,
+                True,
+            ),  # Valid case to start thinking
+            (
+                [
+                    {"role": "ai", "content": "Hello"},
+                    {"role": "user", "content": "Question"},
+                ],
+                False,
+                True,
+            ),  # Valid case
+        ],
+    )
+    def test_should_start_ai_thinking(
+        self, conversation_service, messages, is_ai_thinking, expected
+    ):
         """Test the logic for when the AI should start responding."""
         result = conversation_service.should_start_ai_thinking(messages, is_ai_thinking)
         assert result == expected
@@ -55,6 +85,7 @@ class TestConversationService:
         response_generator = conversation_service.generate_response(prompt)
 
         import inspect
+
         assert inspect.isasyncgen(response_generator)
 
         # Verify the streamed content
