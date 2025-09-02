@@ -2,10 +2,7 @@ import asyncio
 
 import streamlit as st
 
-from src.components.query_page.chat_ui import (
-    render_chat_messages,
-    render_thinking_bubble,
-)
+from src.components.query_page.chat_ui import render_chat_messages
 from src.components.sidebar import render_sidebar
 from src.components.think_display import extract_think_content
 from src.services.summarization_service import SummarizationService
@@ -37,12 +34,11 @@ def render_query_page():
     # Render sidebar
     render_sidebar()
 
-    # Render chat messages
-    render_chat_messages(app_state.messages)
+    # is_thinkingフラグを決定
+    is_thinking = app_state.is_ai_thinking and not app_state.stream_iterator
 
-    # Show thinking bubble if AI is thinking but hasn't started streaming yet
-    if app_state.is_ai_thinking and not app_state.stream_iterator:
-        st.markdown(render_thinking_bubble(), unsafe_allow_html=True)
+    # 思考バブルも含め、チャットメッセージのレンダリングを一元化
+    render_chat_messages(app_state.messages, is_thinking=is_thinking)
 
     # Handle user input
     handle_user_input()

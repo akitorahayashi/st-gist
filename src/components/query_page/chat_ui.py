@@ -18,11 +18,15 @@ def load_chat_colors():
     return {"user_color": "#007bff", "ai_color": "#f1f1f1"}
 
 
-def render_user_message(message):
-    """Render user message with inline styles"""
-    colors = load_chat_colors()
+def get_chat_styles(user_color, ai_color):
+    """Returns the consolidated CSS for the chat UI."""
     return f"""
     <style>
+    .chat-container {{
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 16px;
+    }}
     .user-message {{
         display: flex;
         align-items: flex-start;
@@ -30,27 +34,13 @@ def render_user_message(message):
         margin: 10px 0;
     }}
     .user-content {{
-        background-color: {colors['user_color']};
+        background-color: {user_color};
         color: white;
         max-width: 70%;
         padding: 12px 16px;
         border-radius: 20px;
         word-wrap: break-word;
     }}
-    </style>
-    <div class="user-message">
-        <div class="user-content">
-            {html.escape(message).replace(chr(10), '<br>')}
-        </div>
-    </div>
-    """
-
-
-def render_ai_message(message):
-    """Render AI message with inline styles"""
-    colors = load_chat_colors()
-    return f"""
-    <style>
     .ai-message {{
         display: flex;
         align-items: flex-start;
@@ -58,27 +48,13 @@ def render_ai_message(message):
         margin: 10px 0;
     }}
     .ai-content {{
-        background-color: {colors['ai_color']};
+        background-color: {ai_color};
         color: #333;
         max-width: 70%;
         padding: 12px 16px;
         border-radius: 20px;
         word-wrap: break-word;
     }}
-    </style>
-    <div class="ai-message">
-        <div class="ai-content">
-            {html.escape(message).replace(chr(10), '<br>')}
-        </div>
-    </div>
-    """
-
-
-def render_thinking_bubble():
-    """Render AI thinking bubble with inline styles"""
-    colors = load_chat_colors()
-    return f"""
-    <style>
     .thinking-message {{
         display: flex;
         align-items: flex-start;
@@ -86,7 +62,7 @@ def render_thinking_bubble():
         margin: 10px 0;
     }}
     .thinking-content {{
-        background-color: {colors['ai_color']};
+        background-color: {ai_color};
         color: #333;
         max-width: 70%;
         padding: 12px 16px;
@@ -100,6 +76,34 @@ def render_thinking_bubble():
         25%, 75% {{ opacity: 0.5; }}
     }}
     </style>
+    """
+
+
+def render_user_message(message):
+    """Render user message without inline styles"""
+    return f"""
+    <div class="user-message">
+        <div class="user-content">
+            {html.escape(message).replace(chr(10), '<br>')}
+        </div>
+    </div>
+    """
+
+
+def render_ai_message(message):
+    """Render AI message without inline styles"""
+    return f"""
+    <div class="ai-message">
+        <div class="ai-content">
+            {html.escape(message).replace(chr(10), '<br>')}
+        </div>
+    </div>
+    """
+
+
+def render_thinking_bubble():
+    """Render AI thinking bubble without inline styles"""
+    return '''
     <div class="thinking-message">
         <div class="thinking-content">
             <div style="display: flex; align-items: center;">
@@ -109,34 +113,32 @@ def render_thinking_bubble():
             </div>
         </div>
     </div>
-    """
+    '''
 
 
-def render_chat_messages(messages):
+def render_chat_messages(messages, is_thinking=False):
     """
-    Render all chat messages with inline styles by building a single HTML string.
+    Render all chat messages with a single style block by building a single HTML string.
+    Also renders the thinking bubble if is_thinking is True.
     """
-    # Create an empty list to hold the HTML for each message
     messages_html_list = []
-
     for msg in messages:
         if msg["role"] == "user":
             messages_html_list.append(render_user_message(msg["content"]))
         else:
             messages_html_list.append(render_ai_message(msg["content"]))
+            
+    # is_thinkingがTrueの場合、思考中バブルをリストの末尾に追加
+    if is_thinking:
+        messages_html_list.append(render_thinking_bubble())
 
-    # Join all message HTMLs into a single string
     messages_html_string = "".join(messages_html_list)
 
-    # Wrap the entire chat content in a single container and render it once
+    colors = load_chat_colors()
+    styles = get_chat_styles(colors["user_color"], colors["ai_color"])
+
     full_html = f"""
-    <style>
-    .chat-container {{
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 0 16px;
-    }}
-    </style>
+    {styles}
     <div class="chat-container">
     {messages_html_string}
     </div>
