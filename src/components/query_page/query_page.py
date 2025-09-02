@@ -52,11 +52,13 @@ def render_query_page():
     if app_state.is_ai_thinking and app_state.messages and app_state.messages[-1]["role"] == "user":
         try:
             response = asyncio.run(svc.generate_response_once(app_state.messages[-1]["content"]))
-            app_state.add_ai_message(response)
+            _, clean_response = extract_think_content(response)
+            app_state.add_ai_message(clean_response)
         except Exception as e:
             error_message = f"エラーが発生しました: {e}"
             app_state.set_error(error_message)  # This will also complete_ai_response
-            app_state.add_ai_message(error_message)
+            _, clean_error = extract_think_content(error_message)
+            app_state.add_ai_message(clean_error)
         finally:
             # This might be redundant if set_error is called, but it's safe
             if app_state.is_ai_thinking:
