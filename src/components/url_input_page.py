@@ -70,6 +70,15 @@ def render_url_input_form():
                 return
             try:
                 scraping_model.validate_url(current_url.strip())
+                
+                # Reset all models for a completely fresh session
+                if "scraping_model" in st.session_state:
+                    st.session_state.scraping_model.reset()
+                if "summarization_model" in st.session_state:
+                    st.session_state.summarization_model.reset()
+                if "conversation_model" in st.session_state:
+                    st.session_state.conversation_model.reset()
+                    
                 app_router.set_target_url(current_url.strip())
                 scraping_model.is_scraping = True
             except ValueError as e:
