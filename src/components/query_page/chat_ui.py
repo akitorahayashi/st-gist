@@ -113,30 +113,33 @@ def render_thinking_bubble():
 
 
 def render_chat_messages(messages):
-    """Render all chat messages with inline styles"""
-    st.markdown(
-        """
+    """
+    Render all chat messages with inline styles by building a single HTML string.
+    """
+    # Create an empty list to hold the HTML for each message
+    messages_html_list = []
+
+    for msg in messages:
+        if msg["role"] == "user":
+            messages_html_list.append(render_user_message(msg["content"]))
+        else:
+            messages_html_list.append(render_ai_message(msg["content"]))
+
+    # Join all message HTMLs into a single string
+    messages_html_string = "".join(messages_html_list)
+
+    # Wrap the entire chat content in a single container and render it once
+    full_html = f"""
     <style>
-    .chat-container {
+    .chat-container {{
         max-width: 800px;
         margin: 0 auto;
         padding: 0 16px;
-    }
+    }}
     </style>
     <div class="chat-container">
-    """,
-        unsafe_allow_html=True,
-    )
+    {messages_html_string}
+    </div>
+    """
 
-    for i, msg in enumerate(messages):
-        # Use unique keys to prevent flickering
-        if msg["role"] == "user":
-            html_content = render_user_message(msg["content"])
-        else:
-            html_content = render_ai_message(msg["content"])
-
-        # Use a container with unique key to prevent re-rendering
-        with st.container():
-            st.markdown(html_content, unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(full_html, unsafe_allow_html=True)

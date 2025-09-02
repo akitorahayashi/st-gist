@@ -61,7 +61,7 @@ def handle_user_input():
         st.chat_input("AIが応答中です...", disabled=True)
         return
 
-    user_input = st.chat_input("このページについて質問してください")
+    user_input = st.chat_input("このWebページへの質問")
     if user_input is not None and user_input.strip():
         app_state.add_user_message(user_input.strip())
         st.rerun()

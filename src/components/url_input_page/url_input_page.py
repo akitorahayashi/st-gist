@@ -10,19 +10,23 @@ def render_url_input_page():
     """Render complete URL input page with header, description, form, and footer"""
     app_state = st.session_state.app_state
 
-    # UI要素全体を保持するプレースホルダーを作成
-    placeholder = st.empty()
-
-    # プレースホルダー内にUIを描画
-    with placeholder.container():
-        st.markdown('<div class="page-container">', unsafe_allow_html=True)
-        st.markdown('<div class="description-section">', unsafe_allow_html=True)
+    # UI要素を直接描画する
+    # st.containerを使用してセクションをグループ化
+    with st.container():
         render_app_description()
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
         render_url_input_form()
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+
+    # 処理状態を確認してスクレイピングを実行
+    if app_state.is_processing:
+        try:
+            scraped_content = ScrapingService().scrape(app_state.target_url)
+            app_state.complete_summarization(scraped_content)
+            # ページ遷移のために再実行
+            st.rerun()
+
+        except (ValueError, Exception) as e:
+            app_state.set_error(f"エラーが発生しました: {str(e)}")
+            st.rerun()
 
     # UIを描画した後に、処理状態を確認してスクレイピングを実行
     if app_state.is_processing:
