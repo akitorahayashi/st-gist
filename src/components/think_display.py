@@ -1,7 +1,5 @@
 import streamlit as st
 
-from src.services.conversation_service import ConversationService
-
 
 def render_think_display(show_thinking: bool = False):
     """Render think tag display component"""
@@ -66,8 +64,6 @@ def render_think_display(show_thinking: bool = False):
     )
 
 
-
-
 def update_thinking_content(new_chunk: str) -> bool:
     """
     Update thinking content in session state with new streaming chunk.
@@ -101,6 +97,7 @@ def update_thinking_content(new_chunk: str) -> bool:
     # For now, we'll implement a simplified version here
     # TODO: Refactor to use ConversationService properly
     import re
+
     think_pattern = r"<think>(.*?)</think>"
     think_matches = re.findall(think_pattern, buffer, re.DOTALL)
     thinking_content = "\n".join(think_matches).strip()

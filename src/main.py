@@ -3,7 +3,6 @@ import os
 import streamlit as st
 
 from src.clients.ollama_client import OllamaApiClient
-from src.components.header import render_header
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
 from src.services.conversation_service import ConversationService
@@ -21,9 +20,6 @@ def main():
     else:
         st.set_page_config(layout="centered")
         render_url_input_page()
-
-    if not app_state.show_chat:
-        render_header()
 
 
 def initialize_session():

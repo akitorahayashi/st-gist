@@ -1,87 +1,12 @@
 import asyncio
 import html
-from pathlib import Path
 
 import streamlit as st
-import toml
+
 from src.components.sidebar import render_sidebar
 from src.services.conversation_service import ConversationService
 from src.services.summarization_service import SummarizationService
 from src.state import AppState
-
-
-def _load_chat_colors():
-    """Load chat colors from config.toml"""
-    config_path = Path(".streamlit/config.toml")
-    if config_path.exists():
-        config = toml.load(config_path)
-        chat_config = config.get("chat", {})
-        return {
-            "user_color": chat_config.get("userMessageColor", "#007bff"),
-            "ai_color": chat_config.get("aiMessageColor", "#f1f1f1"),
-        }
-    return {"user_color": "#007bff", "ai_color": "#f1f1f1"}
-
-
-def _get_chat_styles(user_color, ai_color):
-    """Returns the consolidated CSS for the chat UI."""
-    return f"""
-    <style>
-    .chat-container {{
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 0 16px;
-    }}
-    .user-message {{
-        display: flex;
-        align-items: flex-start;
-        justify-content: flex-end;
-        margin: 10px 0;
-    }}
-    .user-content {{
-        background-color: {user_color};
-        color: white;
-        max-width: 70%;
-        padding: 12px 16px;
-        border-radius: 20px;
-        word-wrap: break-word;
-    }}
-    .ai-message {{
-        display: flex;
-        align-items: flex-start;
-        justify-content: flex-start;
-        margin: 10px 0;
-    }}
-    .ai-content {{
-        background-color: {ai_color};
-        color: #333;
-        max-width: 70%;
-        padding: 12px 16px;
-        border-radius: 20px;
-        word-wrap: break-word;
-    }}
-    .thinking-message {{
-        display: flex;
-        align-items: flex-start;
-        justify-content: flex-start;
-        margin: 10px 0;
-    }}
-    .thinking-content {{
-        background-color: {ai_color};
-        color: #333;
-        max-width: 70%;
-        padding: 12px 16px;
-        border-radius: 20px;
-    }}
-    .thinking-dots {{
-        animation: thinking 1.5s infinite;
-    }}
-    @keyframes thinking {{
-        0%, 50%, 100% {{ opacity: 1; }}
-        25%, 75% {{ opacity: 0.5; }}
-    }}
-    </style>
-    """
 
 
 def _render_user_message(message):
@@ -139,11 +64,7 @@ def _render_chat_messages(messages, is_thinking=False):
 
     messages_html_string = "".join(messages_html_list)
 
-    colors = _load_chat_colors()
-    styles = _get_chat_styles(colors["user_color"], colors["ai_color"])
-
     full_html = f"""
-    {styles}
     <div class="chat-container">
     {messages_html_string}
     </div>
@@ -156,6 +77,12 @@ def render_query_page():
     """Render query page with URL summary and chat functionality"""
     app_state: AppState = st.session_state.app_state
     conv_s: ConversationService = st.session_state.get("conversation_service")
+
+    # Load external CSS for query page styling
+    st.markdown(
+        '<link href="/static/css/query_page.css" rel="stylesheet">',
+        unsafe_allow_html=True,
+    )
 
     st.title("Query Page")
 
@@ -303,7 +230,9 @@ def handle_stream_generation():
             st.rerun()
         except StopAsyncIteration:
             final_response = "".join(app_state.stream_parts)
-            thinking_content, summary_content = conv_s.extract_think_content(final_response)
+            thinking_content, summary_content = conv_s.extract_think_content(
+                final_response
+            )
             app_state.set_summary_and_thinking(summary_content, thinking_content)
 
             app_state.set_streaming(False)
