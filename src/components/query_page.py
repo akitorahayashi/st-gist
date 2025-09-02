@@ -54,7 +54,8 @@ def render_query_page():
     # Display summary content
     if page_summary.strip():
         st.markdown("### 📝 要約コンテンツ")
-        st.markdown(page_summary)
+        _, clean_summary = conversation_model.extract_think_content(page_summary)
+        st.markdown(clean_summary)
 
     # Handle stream generation from scraped content - only run once
     if (
@@ -84,7 +85,8 @@ def render_query_page():
                     if summary_content.strip():
                         with summary_placeholder.container():
                             st.markdown("### 📝 要約コンテンツ")
-                            st.markdown(summary_content)
+                            _, clean_summary_content = conversation_model.extract_think_content(summary_content)
+                            st.markdown(clean_summary_content)
 
             asyncio.run(handle_streaming())
         except Exception as e:
