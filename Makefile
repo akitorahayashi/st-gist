@@ -88,17 +88,22 @@ lint: ## Perform static code analysis (check) using Black and Ruff
 # ==============================================================================
 
 .PHONY: test
-test: unit-test build-test e2e-test ## Run the full test suite
+test: unit-test intg-test build-test e2e-test ## Run the full test suite
 
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
-	@$(PYTHON) -m pytest tests/unit -v
+	@$(PYTHON) -m pytest tests/unit -v -s
 
 .PHONY: build-test
 build-test: ## Run build tests
 	@echo "Running build tests..."
 	@$(PYTHON) -m pytest tests/build -s
+
+.PHONY: intg-test
+intg-test: ## Run integration tests
+	@echo "Running integration tests..."
+	@PYTHONPATH=. $(PYTHON) -m pytest tests/intg -v -s
 
 .PHONY: e2e-test
 e2e-test: ## Run end-to-end tests

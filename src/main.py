@@ -30,7 +30,7 @@ def initialize_session():
     if "ollama_client" not in st.session_state:
         is_debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
         if is_debug:
-            from dev.mocks.mock_ollama_client import MockOllamaApiClient
+            from dev.mocks.clients.mock_ollama_client import MockOllamaApiClient
 
             st.session_state.ollama_client = MockOllamaApiClient()
         else:
