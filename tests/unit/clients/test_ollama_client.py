@@ -1,3 +1,4 @@
+import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -12,7 +13,7 @@ class TestOllamaApiClient:
             "os.environ",
             {"OLLAMA_API_ENDPOINT": "http://localhost:11434", "OLLAMA_MODEL": "llama2"},
         ):
-            self.client = OllamaApiClient()
+            self.client = OllamaApiClient(api_url=os.getenv("OLLAMA_API_ENDPOINT"))
 
     def test_init_with_env_vars(self):
         """Test client initialization with environment variables."""
@@ -20,7 +21,7 @@ class TestOllamaApiClient:
             "os.environ",
             {"OLLAMA_API_ENDPOINT": "http://test:11434", "OLLAMA_MODEL": "test-model"},
         ):
-            client = OllamaApiClient()
+            client = OllamaApiClient(api_url=os.getenv("OLLAMA_API_ENDPOINT"))
             assert client.api_url == "http://test:11434"
             assert client.generate_endpoint == "http://test:11434/api/v1/generate"
 

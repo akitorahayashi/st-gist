@@ -43,35 +43,26 @@ class TestSummarizationModel:
         # The mock's return value should be the async generator itself
         mock_llm_client.generate.return_value = stream_generator()
 
-        # Mock streamlit session state
-        with patch("streamlit.session_state", MagicMock()) as mock_st_session_state:
-            # Mock conversation_service on session_state
-            mock_conv_service = MagicMock()
-            mock_conv_service.extract_think_content.return_value = (
-                "Thinking about it.",
-                "This is the summary.",
-            )
-            mock_st_session_state.get.return_value = mock_conv_service
-            mock_st_session_state.__contains__.return_value = True
+        results = []
+        async for thinking, summary in summarization_model.stream_summary(
+            scraped_content
+        ):
+            results.append((thinking, summary))
 
-            results = []
-            async for thinking, summary in summarization_model.stream_summary(
-                scraped_content
-            ):
-                results.append((thinking, summary))
+        # Check intermediate yields based on the new extract_think_content logic
+        # 1st yield: "<think>Thinking " - No closing tag, so it's all summary
+        assert results[0] == ("", "<think>Thinking")
+        # 2nd yield: "<think>Thinking about it.</think>" - Complete tag
+        assert results[1] == ("Thinking about it.", "")
+        # 3rd yield: "<think>Thinking about it.</think>This is the summary."
+        assert results[2] == ("Thinking about it.", "This is the summary.")
+        # Final yield from the completed stream
+        assert results[3] == ("Thinking about it.", "This is the summary.")
 
-            # Check intermediate yields
-            assert results[0] == ("Thinking ", "")  # After first chunk
-            assert results[1] == ("Thinking about it.", "")  # After second chunk
-            assert results[2] == (
-                "Thinking about it.",
-                "This is the summary.",
-            )  # After third chunk
-
-            # Check final state
-            assert summarization_model.thinking == "Thinking about it."
-            assert summarization_model.summary == "This is the summary."
-            assert not summarization_model.is_summarizing
+        # Check final state
+        assert summarization_model.thinking == "Thinking about it."
+        assert summarization_model.summary == "This is the summary."
+        assert not summarization_model.is_summarizing
 
     @pytest.mark.asyncio
     async def test_stream_summary_llm_error(self, summarization_model, mock_llm_client):

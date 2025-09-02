@@ -1,4 +1,5 @@
 import logging
+import re
 
 from src.protocols.clients.ollama_client_protocol import OllamaClientProtocol
 from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
@@ -24,6 +25,28 @@ class SummarizationModel(SummarizationModelProtocol):
         self.is_summarizing = False
         self.last_error = None
 
+    def extract_think_content(self, text: str) -> tuple[str, str]:
+        """
+        Extract think content from text and return (thinking_content, remaining_text).
+
+        Args:
+            text: Input text that may contain <think> tags
+
+        Returns:
+            tuple of (thinking_content, text_without_think_tags)
+        """
+        # Pattern to match think tags and their content
+        think_pattern = r"<think>(.*?)</think>"
+
+        # Find all think content
+        think_matches = re.findall(think_pattern, text, re.DOTALL)
+        thinking_content = "\n".join(think_matches).strip()
+
+        # Remove think tags from the original text
+        cleaned_text = re.sub(think_pattern, "", text, flags=re.DOTALL).strip()
+
+        return thinking_content, cleaned_text
+
     async def stream_summary(self, scraped_content: str):
         """
         Handle stream generation from scraped content and yield thinking/summary content.
@@ -34,11 +57,6 @@ class SummarizationModel(SummarizationModelProtocol):
         Yields:
             tuple[str, str]: (thinking_content, summary_content) for each chunk
         """
-        # Import here to avoid circular imports
-
-        conv_s = None
-
-        # Set processing state
         self.is_summarizing = True
         self.last_error = None
 
@@ -46,34 +64,17 @@ class SummarizationModel(SummarizationModelProtocol):
         prompt = self._build_prompt(truncated_content)
 
         stream_parts = []
+        final_response = ""
 
         try:
             async for chunk in self.llm_client.generate(prompt):
                 stream_parts.append(chunk)
-
-                # Process current response and extract thinking/summary content
                 current_response = "".join(stream_parts)
-                thinking_content, summary_content = "", ""
-                last_think_start = current_response.rfind("<think>")
-                last_think_end = current_response.rfind("</think>")
-
-                if last_think_start != -1:
-                    summary_before_think = current_response[:last_think_start]
-                    if last_think_end > last_think_start:
-                        thinking_content = current_response[
-                            last_think_start + 7 : last_think_end
-                        ]
-                        summary_content = (
-                            summary_before_think
-                            + current_response[last_think_end + 8 :]
-                        )
-                    else:
-                        thinking_content = current_response[last_think_start + 7 :]
-                        summary_content = summary_before_think
-                else:
-                    summary_content = current_response
-
+                thinking_content, summary_content = self.extract_think_content(
+                    current_response
+                )
                 yield thinking_content, summary_content
+            final_response = "".join(stream_parts)
 
         except Exception as e:
             logger.error(f"Streaming summarization failed: {e}")
@@ -81,17 +82,10 @@ class SummarizationModel(SummarizationModelProtocol):
             self.last_error = error_msg
             raise SummarizationModelError(error_msg) from e
         finally:
-            # Reset processing state
             self.is_summarizing = False
 
         # Final processing when streaming is complete
-        final_response = "".join(stream_parts)
-        if conv_s:
-            thinking_content, summary_content = conv_s.extract_think_content(
-                final_response
-            )
-        else:
-            thinking_content, summary_content = "", final_response
+        thinking_content, summary_content = self.extract_think_content(final_response)
 
         # Store final results in instance variables
         self.thinking = thinking_content

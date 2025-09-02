@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -104,15 +104,18 @@ class TestConversationModel:
 
     # --- limit_messages test ---
     def test_limit_messages(self, conversation_model):
-        """Test that messages are correctly limited in session_state."""
-        mock_session_state = MagicMock()
-        mock_session_state.messages = [
+        """Test that messages are correctly limited in the model's state."""
+        # Add 15 messages directly to the model
+        conversation_model.messages = [
             {"role": "user", "content": str(i)} for i in range(15)
         ]
 
-        with patch("streamlit.session_state", mock_session_state):
-            conversation_model.limit_messages(max_messages=10)
-            assert len(mock_session_state.messages) == 10
-            assert (
-                mock_session_state.messages[0]["content"] == "5"
-            )  # Check if the oldest messages were removed
+        # Limit the messages to 10
+        conversation_model.limit_messages(max_messages=10)
+
+        # Assert that the length is now 10
+        assert len(conversation_model.messages) == 10
+
+        # Assert that the oldest messages were removed
+        # The first message should now be the one with content "5"
+        assert conversation_model.messages[0]["content"] == "5"
