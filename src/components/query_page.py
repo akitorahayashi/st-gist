@@ -11,8 +11,6 @@ def render_query_page():
     """Render query page with URL summary and chat functionality"""
     # Clear all previous page components immediately
     st.empty()
-    
-    app_router = st.session_state.app_router
     conversation_model: ConversationModel = st.session_state.get("conversation_model")
 
     # Get summarization model from session_state
@@ -69,7 +67,7 @@ def render_query_page():
             # Create placeholders for streaming content
             thinking_placeholder = st.empty()
             summary_placeholder = st.empty()
-            
+
             # Use the new streaming method that yields content
             async def handle_streaming():
                 async for (
@@ -82,7 +80,7 @@ def render_query_page():
                             st.markdown("### 🤔 AI の思考過程")
                             with st.expander("思考プロセス", expanded=True):
                                 st.markdown(thinking_content)
-                    
+
                     if summary_content.strip():
                         with summary_placeholder.container():
                             st.markdown("### 📝 要約コンテンツ")
@@ -90,7 +88,9 @@ def render_query_page():
 
             asyncio.run(handle_streaming())
         except Exception as e:
-            summarization_model.last_error = f"要約の生成中にエラーが発生しました: {str(e)}"
+            summarization_model.last_error = (
+                f"要約の生成中にエラーが発生しました: {str(e)}"
+            )
             st.error(summarization_model.last_error)
 
     # Add divider before chat if we have content

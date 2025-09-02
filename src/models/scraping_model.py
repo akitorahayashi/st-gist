@@ -54,7 +54,7 @@ class ScrapingModel(ScrapingModelProtocol):
     def scrape(self, url: str, timeout=(30, 90)) -> str:
         self.is_scraping = True
         self.last_error = None
-        
+
         try:
             self.validate_url(url)
 

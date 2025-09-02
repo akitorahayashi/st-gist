@@ -3,14 +3,14 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
 from src.clients.ollama_client import OllamaApiClient
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
 from src.models import ConversationModel, ScrapingModel, SummarizationModel
 from src.router import AppRouter, Page
+
+# Load environment variables
+load_dotenv()
 
 
 def main():

@@ -32,25 +32,29 @@ def render_url_input_form():
             target_url = st.session_state.get("target_url", "")
 
             # 処理中のUI表示
-            st.text_input("URL", value=target_url, disabled=True, label_visibility="collapsed")
+            st.text_input(
+                "URL", value=target_url, disabled=True, label_visibility="collapsed"
+            )
             st.markdown("<br>", unsafe_allow_html=True)
-            st.button("ページの内容を取得中...", use_container_width=True, disabled=True)
+            st.button(
+                "ページの内容を取得中...", use_container_width=True, disabled=True
+            )
 
             # 実際のスクレイピング処理
             try:
                 scraping_model.scrape(target_url)
                 app_router.go_to_chat_page()
                 st.rerun()
-            except Exception as e:
+            except Exception:
                 st.rerun()
             return
 
         # --- 待機中の場合のUI描画 ---
-        url = st.text_input(
+        st.text_input(
             "URLを入力してください",
             placeholder="https://example.com",
             key="url_input",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
         )
 
         if scraping_model.last_error:
@@ -71,8 +75,4 @@ def render_url_input_form():
             except ValueError as e:
                 scraping_model.last_error = str(e)
 
-        st.button(
-            "要約を開始",
-            use_container_width=True,
-            on_click=on_summarize_click
-        )
+        st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)

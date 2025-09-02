@@ -1,6 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 import requests
-from unittest.mock import MagicMock, patch
 
 from src.models.scraping_model import ScrapingModel
 
@@ -32,7 +33,10 @@ class TestScrapingModel:
             ("http://127.0.0.1", "指定のホストは許可されていません。"),
             ("https://192.168.1.1", "指定のホストは許可されていません。"),
             ("http://localhost", "指定のホストは許可されていません。"),
-            ("http://invalid.hostname.local", "指定されたホスト 'invalid.hostname.local' が見つかりません。URLを確認してください。"),
+            (
+                "http://invalid.hostname.local",
+                "指定されたホスト 'invalid.hostname.local' が見つかりません。URLを確認してください。",
+            ),
         ],
     )
     def test_validate_url_invalid(self, scraping_model, url, error_message):
@@ -76,10 +80,14 @@ class TestScrapingModel:
     def test_scrape_http_error(self, mock_get, scraping_model):
         """Test that scrape handles HTTP errors."""
         mock_response = MagicMock()
-        mock_response.raise_for_status.side_effect = requests.RequestException("HTTP Error")
+        mock_response.raise_for_status.side_effect = requests.RequestException(
+            "HTTP Error"
+        )
         mock_get.return_value = mock_response
 
-        with pytest.raises(ValueError, match="コンテンツ取得に失敗しました: HTTP Error"):
+        with pytest.raises(
+            ValueError, match="コンテンツ取得に失敗しました: HTTP Error"
+        ):
             scraping_model.scrape("http://example.com")
         assert not scraping_model.is_scraping
 

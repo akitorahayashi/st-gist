@@ -1,6 +1,6 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-import pytest_asyncio
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from src.models.summarization_model import SummarizationModel, SummarizationModelError
 
@@ -74,9 +74,7 @@ class TestSummarizationModel:
             assert not summarization_model.is_summarizing
 
     @pytest.mark.asyncio
-    async def test_stream_summary_llm_error(
-        self, summarization_model, mock_llm_client
-    ):
+    async def test_stream_summary_llm_error(self, summarization_model, mock_llm_client):
         """Test that stream_summary handles errors from the LLM client."""
         scraped_content = "This is some content."
 
@@ -88,7 +86,8 @@ class TestSummarizationModel:
 
         with patch("streamlit.session_state", MagicMock()):
             with pytest.raises(
-                SummarizationModelError, match="要約のストリーミング生成に失敗しました。"
+                SummarizationModelError,
+                match="要約のストリーミング生成に失敗しました。",
             ):
                 async for _ in summarization_model.stream_summary(scraped_content):
                     pass

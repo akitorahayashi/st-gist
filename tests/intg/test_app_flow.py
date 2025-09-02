@@ -1,7 +1,7 @@
 import os
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-import pytest_asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
 
 from src import main
 from src.routing import Page
@@ -66,16 +66,19 @@ async def test_full_app_flow(initialized_models):
 
     # Mock SummarizationModel's stream_summary method
     summarization_model = session.summarization_model
+
     async def mock_stream_summary(content):
         summarization_model.thinking = "Thinking about the content."
         summarization_model.summary = "This is the summary."
         yield ("Thinking about the content.", "This is the summary.")
+
     summarization_model.stream_summary = mock_stream_summary
 
     # Mock ConversationModel's respond_to_user_message method
     conversation_model = session.conversation_model
-    conversation_model.respond_to_user_message = AsyncMock(return_value="This is the AI's answer.")
-
+    conversation_model.respond_to_user_message = AsyncMock(
+        return_value="This is the AI's answer."
+    )
 
     # 2. Scrape a URL
     test_url = "http://example.com"
@@ -88,7 +91,7 @@ async def test_full_app_flow(initialized_models):
     # 3. Generate summary
     # In the actual app, this is done via a service, we simulate it here
     async for _ in summarization_model.stream_summary(scraped_content):
-        pass # Consume the generator
+        pass  # Consume the generator
 
     assert summarization_model.thinking == "Thinking about the content."
     assert summarization_model.summary == "This is the summary."
@@ -106,5 +109,10 @@ async def test_full_app_flow(initialized_models):
     conversation_model.add_ai_message(ai_response)
 
     assert ai_response == "This is the AI's answer."
-    assert conversation_model.messages[-1] == {"role": "ai", "content": "This is the AI's answer."}
-    assert conversation_model.should_respond() is False # Last message is from AI, so should be false
+    assert conversation_model.messages[-1] == {
+        "role": "ai",
+        "content": "This is the AI's answer.",
+    }
+    assert (
+        conversation_model.should_respond() is False
+    )  # Last message is from AI, so should be false
