@@ -1,19 +1,161 @@
 import asyncio
+import html
+from pathlib import Path
 
 import streamlit as st
-
-from src.components.query_page.chat_ui import render_chat_messages
+import toml
 from src.components.sidebar import render_sidebar
-from src.components.think_display import extract_think_content
 from src.services.conversation_service import ConversationService
 from src.services.summarization_service import SummarizationService
 from src.state import AppState
 
 
+def _load_chat_colors():
+    """Load chat colors from config.toml"""
+    config_path = Path(".streamlit/config.toml")
+    if config_path.exists():
+        config = toml.load(config_path)
+        chat_config = config.get("chat", {})
+        return {
+            "user_color": chat_config.get("userMessageColor", "#007bff"),
+            "ai_color": chat_config.get("aiMessageColor", "#f1f1f1"),
+        }
+    return {"user_color": "#007bff", "ai_color": "#f1f1f1"}
+
+
+def _get_chat_styles(user_color, ai_color):
+    """Returns the consolidated CSS for the chat UI."""
+    return f"""
+    <style>
+    .chat-container {{
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 16px;
+    }}
+    .user-message {{
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        margin: 10px 0;
+    }}
+    .user-content {{
+        background-color: {user_color};
+        color: white;
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 20px;
+        word-wrap: break-word;
+    }}
+    .ai-message {{
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        margin: 10px 0;
+    }}
+    .ai-content {{
+        background-color: {ai_color};
+        color: #333;
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 20px;
+        word-wrap: break-word;
+    }}
+    .thinking-message {{
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        margin: 10px 0;
+    }}
+    .thinking-content {{
+        background-color: {ai_color};
+        color: #333;
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 20px;
+    }}
+    .thinking-dots {{
+        animation: thinking 1.5s infinite;
+    }}
+    @keyframes thinking {{
+        0%, 50%, 100% {{ opacity: 1; }}
+        25%, 75% {{ opacity: 0.5; }}
+    }}
+    </style>
+    """
+
+
+def _render_user_message(message):
+    """Render user message without inline styles"""
+    return f"""
+    <div class="user-message">
+        <div class="user-content">
+            {html.escape(message).replace(chr(10), '<br>')}
+        </div>
+    </div>
+    """
+
+
+def _render_ai_message(message):
+    """Render AI message without inline styles"""
+    return f"""
+    <div class="ai-message">
+        <div class="ai-content">
+            {html.escape(message).replace(chr(10), '<br>')}
+        </div>
+    </div>
+    """
+
+
+def _render_thinking_bubble():
+    """Render AI thinking bubble without inline styles"""
+    return """
+    <div class="thinking-message">
+        <div class="thinking-content">
+            <div style="display: flex; align-items: center;">
+                <div class="thinking-dots">
+                    Thinking...
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+
+
+def _render_chat_messages(messages, is_thinking=False):
+    """
+    Render all chat messages with a single style block by building a single HTML string.
+    Also renders the thinking bubble if is_thinking is True.
+    """
+    messages_html_list = []
+    for msg in messages:
+        if msg["role"] == "user":
+            messages_html_list.append(_render_user_message(msg["content"]))
+        else:
+            messages_html_list.append(_render_ai_message(msg["content"]))
+
+    # is_thinkingがTrueの場合、思考中バブルをリストの末尾に追加
+    if is_thinking:
+        messages_html_list.append(_render_thinking_bubble())
+
+    messages_html_string = "".join(messages_html_list)
+
+    colors = _load_chat_colors()
+    styles = _get_chat_styles(colors["user_color"], colors["ai_color"])
+
+    full_html = f"""
+    {styles}
+    <div class="chat-container">
+    {messages_html_string}
+    </div>
+    """
+
+    st.markdown(full_html, unsafe_allow_html=True)
+
+
 def render_query_page():
     """Render query page with URL summary and chat functionality"""
     app_state: AppState = st.session_state.app_state
-    svc: ConversationService = st.session_state.get("conversation_service")
+    conv_s: ConversationService = st.session_state.get("conversation_service")
 
     st.title("Query Page")
 
@@ -39,7 +181,7 @@ def render_query_page():
     render_sidebar()
 
     # --- Chat Logic --- #
-    render_chat_messages(app_state.messages, is_thinking=app_state.is_ai_thinking)
+    _render_chat_messages(app_state.messages, is_thinking=app_state.is_ai_thinking)
 
     prompt = st.chat_input("このWebページへの質問", disabled=app_state.is_ai_thinking)
 
@@ -56,14 +198,14 @@ def render_query_page():
     ):
         try:
             response = asyncio.run(
-                svc.generate_response_once(app_state.messages[-1]["content"])
+                conv_s.generate_response_once(app_state.messages[-1]["content"])
             )
-            _, clean_response = extract_think_content(response)
+            _, clean_response = conv_s.extract_think_content(response)
             app_state.add_ai_message(clean_response)
         except Exception as e:
             error_message = f"エラーが発生しました: {e}"
             app_state.set_error(error_message)  # This will also complete_ai_response
-            _, clean_error = extract_think_content(error_message)
+            _, clean_error = conv_s.extract_think_content(error_message)
             app_state.add_ai_message(clean_error)
         finally:
             # This might be redundant if set_error is called, but it's safe
@@ -75,6 +217,7 @@ def render_query_page():
 def handle_stream_generation():
     """Handle stream generation from scraped content"""
     app_state = st.session_state.app_state
+    conv_s: ConversationService = st.session_state.get("conversation_service")
     has_summary = app_state.page_summary or app_state.current_thinking
 
     # Start streaming if we have scraped content but no summary
@@ -144,7 +287,7 @@ def handle_stream_generation():
 
                 except StopAsyncIteration:
                     final_response = "".join(app_state.stream_parts)
-                    thinking_content, summary_content = extract_think_content(
+                    thinking_content, summary_content = conv_s.extract_think_content(
                         final_response
                     )
                     app_state.set_summary_and_thinking(
@@ -160,7 +303,7 @@ def handle_stream_generation():
             st.rerun()
         except StopAsyncIteration:
             final_response = "".join(app_state.stream_parts)
-            thinking_content, summary_content = extract_think_content(final_response)
+            thinking_content, summary_content = conv_s.extract_think_content(final_response)
             app_state.set_summary_and_thinking(summary_content, thinking_content)
 
             app_state.set_streaming(False)
