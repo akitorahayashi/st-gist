@@ -6,10 +6,12 @@ from typing import AsyncGenerator
 import httpx
 import streamlit as st
 
+from src.protocols.clients.ollama_client_protocol import OllamaClientProtocol
+
 logger = logging.getLogger(__name__)
 
 
-class OllamaApiClient:
+class OllamaApiClient(OllamaClientProtocol):
     """
     A client for interacting with the Ollama API.
     """

@@ -1,9 +1,11 @@
 from typing import Dict
 
+from src.protocols.models.scraping_model_protocol import ScrapingModelProtocol
 
-class MockScrapingService:
+
+class MockScrapingModel(ScrapingModelProtocol):
     """
-    Mock scraping service for testing and development.
+    Mock scraping model for testing and development.
     """
 
     def __init__(self):

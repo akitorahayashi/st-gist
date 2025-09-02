@@ -3,8 +3,10 @@ from typing import Any, AsyncGenerator
 
 import streamlit as st
 
+from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
 
-class ConversationModel:
+
+class ConversationModel(ConversationModelProtocol):
     def __init__(self, client: Any):
         self.client = client
         self.messages = []

@@ -1,9 +1,9 @@
 from typing import Protocol
 
 
-class SummarizationProtocol(Protocol):
+class SummarizationModelProtocol(Protocol):
     """
-    Protocol for text summarization services.
+    Protocol for text summarization models.
     """
 
     async def summarize(self, text: str, max_chars: int = 10000) -> str:

@@ -5,8 +5,10 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
+from src.protocols.models.scraping_model_protocol import ScrapingModelProtocol
 
-class ScrapingModel:
+
+class ScrapingModel(ScrapingModelProtocol):
     def __init__(self):
         self.content = None
         self.is_scraping = False

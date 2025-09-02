@@ -1,9 +1,11 @@
 import asyncio
 
+from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
 
-class MockSummarizationService:
+
+class MockSummarizationModel(SummarizationModelProtocol):
     """
-    Mock summarization service for testing and development.
+    Mock summarization model for testing and development.
     """
 
     def __init__(self, llm_client=None):

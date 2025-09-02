@@ -1,6 +1,7 @@
 import logging
 
-from src.protocols.ollama_client_protocol import OllamaClientProtocol
+from src.protocols.clients.ollama_client_protocol import OllamaClientProtocol
+from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ class SummarizationModelError(Exception):
     pass
 
 
-class SummarizationModel:
+class SummarizationModel(SummarizationModelProtocol):
     """
     A model for summarizing web page content.
     """

@@ -1,9 +1,9 @@
 from typing import Protocol
 
 
-class ScrapingProtocol(Protocol):
+class ScrapingModelProtocol(Protocol):
     """
-    Protocol for web scraping services.
+    Protocol for web scraping models.
     """
 
     def scrape(self, url: str, timeout: tuple = (10, 30)) -> str:
