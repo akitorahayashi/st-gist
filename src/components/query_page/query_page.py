@@ -39,53 +39,29 @@ def render_query_page():
     render_sidebar()
 
     # --- Chat Logic --- #
-    # 既存のチャット履歴と、もしAIが思考中の場合はその状態も描画する
-    # st.session_state.messages にはユーザーメッセージとAIの最終応答のみが含まれる
-    render_chat_messages(app_state.messages)
+    render_chat_messages(app_state.messages, is_thinking=app_state.is_ai_thinking)
 
-    # チャット入力欄
-    prompt = st.chat_input("このWebページへの質問")
+    prompt = st.chat_input("このWebページへの質問", disabled=app_state.is_ai_thinking)
 
-    # ユーザーが新しいメッセージを送信した場合
     if prompt:
-        app_state.add_user_message(prompt) # ユーザーメッセージを状態に追加
-        st.rerun() # ページを再描画し、AIの応答生成フェーズへ移行する
+        app_state.add_user_message(prompt)
+        app_state.start_ai_response()  # Set thinking to True
+        st.rerun()
 
-    # 最後のメッセージがユーザーのものであり、まだAIが応答を生成していない場合
-    # ここでAIの応答生成を開始する
-    if (
-        app_state.messages
-        and app_state.messages[-1]["role"] == "user"
-        and not app_state.is_ai_thinking  # AIがすでに思考中でないことを確認
-    ):
-        # AIが思考中であることをUIに表示するための仮メッセージを追加
-        # これは render_chat_messages で 'Thinking...' として表示される
-        app_state.start_ai_response()
-        st.rerun() # Thinking... を表示するために再描画
-
-    # 'Thinking...' が表示された後、実際のAI応答を生成する
-    # is_ai_thinking が True で、最後のメッセージがユーザーのものである場合
-    if app_state.is_ai_thinking and app_state.messages[-1]["role"] == "user":
-        # Streamlitのスピナーで「Thinking...」を表示
-        with st.chat_message("ai"): # AIのメッセージバブル内でスピナーを表示
-            with st.spinner("Thinking..."):
-                try:
-                    user_message_content = app_state.messages[-1]["content"]
-                    response = asyncio.run(svc.generate_response_once(user_message_content))
-                    
-                    # 思考中状態を解除し、実際のAI応答を追加
-                    app_state.complete_ai_response()
-                    app_state.add_ai_message(response)
-                    st.rerun() # 実際のAI応答を表示するために再描画
-                    
-                except Exception as e:
-                    error_message = f"エラーが発生しました: {e}"
-                    st.error(error_message) # エラーをStreamlitのUIに直接表示
-                    
-                    # 思考中状態を解除し、エラーメッセージをチャット履歴に追加
-                    app_state.complete_ai_response()
-                    app_state.add_ai_message(error_message)
-                    st.rerun() # エラーメッセージを表示するために再描画
+    # If the last message is from the user and we are in the thinking state
+    if app_state.is_ai_thinking and app_state.messages and app_state.messages[-1]["role"] == "user":
+        try:
+            response = asyncio.run(svc.generate_response_once(app_state.messages[-1]["content"]))
+            app_state.add_ai_message(response)
+        except Exception as e:
+            error_message = f"エラーが発生しました: {e}"
+            app_state.set_error(error_message)  # This will also complete_ai_response
+            app_state.add_ai_message(error_message)
+        finally:
+            # This might be redundant if set_error is called, but it's safe
+            if app_state.is_ai_thinking:
+                app_state.complete_ai_response()
+            st.rerun()
 
 
 def handle_stream_generation():

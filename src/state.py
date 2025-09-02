@@ -97,6 +97,7 @@ class AppState:
         """Starts the summarization process."""
         self.clear_error()
         st.session_state.processing = True
+        st.session_state.is_ai_thinking = True
         st.session_state.target_url = url
         st.session_state.show_chat = False
 

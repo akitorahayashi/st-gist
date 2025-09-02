@@ -101,9 +101,25 @@ def render_ai_message(message):
     """
 
 
-def render_chat_messages(messages):
+def render_thinking_bubble():
+    """Render AI thinking bubble without inline styles"""
+    return '''
+    <div class="thinking-message">
+        <div class="thinking-content">
+            <div style="display: flex; align-items: center;">
+                <div class="thinking-dots">
+                    Thinking...
+                </div>
+            </div>
+        </div>
+    </div>
+    '''
+
+
+def render_chat_messages(messages, is_thinking=False):
     """
     Render all chat messages with a single style block by building a single HTML string.
+    Also renders the thinking bubble if is_thinking is True.
     """
     messages_html_list = []
     for msg in messages:
@@ -111,6 +127,10 @@ def render_chat_messages(messages):
             messages_html_list.append(render_user_message(msg["content"]))
         else:
             messages_html_list.append(render_ai_message(msg["content"]))
+            
+    # is_thinkingがTrueの場合、思考中バブルをリストの末尾に追加
+    if is_thinking:
+        messages_html_list.append(render_thinking_bubble())
 
     messages_html_string = "".join(messages_html_list)
 
