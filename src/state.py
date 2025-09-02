@@ -28,8 +28,8 @@ class AppState:
             st.session_state.last_error = None
         if "scraped_content" not in st.session_state:
             st.session_state.scraped_content = ""
-        if "ai_thinking" not in st.session_state:
-            st.session_state.ai_thinking = False
+        if "is_ai_thinking" not in st.session_state:
+            st.session_state.is_ai_thinking = False
         if "streaming" not in st.session_state:
             st.session_state.streaming = False
         if "stream_parts" not in st.session_state:
@@ -73,7 +73,7 @@ class AppState:
 
     @property
     def is_ai_thinking(self) -> bool:
-        return st.session_state.ai_thinking
+        return st.session_state.is_ai_thinking
 
     @property
     def is_streaming(self) -> bool:
@@ -116,17 +116,17 @@ class AppState:
         """Adds a user message to the chat history."""
         st.session_state.messages.append({"role": "user", "content": content})
 
-    def start_ai_response(self):
-        """Sets the state for starting an AI response."""
-        st.session_state.ai_thinking = True
-
     def add_ai_message(self, content: str):
         """Adds a new AI message to the chat history."""
         st.session_state.messages.append({"role": "ai", "content": content})
 
+    def start_ai_response(self):
+        """Sets the state to indicate AI is thinking."""
+        st.session_state.is_ai_thinking = True
+
     def complete_ai_response(self):
-        """Sets the state for completing an AI response."""
-        st.session_state.ai_thinking = False
+        """Sets the state to indicate AI has finished thinking."""
+        st.session_state.is_ai_thinking = False
 
     def reset_for_new_url(self):
         """Resets the state for a new URL submission."""
@@ -138,7 +138,7 @@ class AppState:
         st.session_state.scraped_content = ""
         st.session_state.show_chat = False
         st.session_state.processing = False
-        st.session_state.ai_thinking = False
+        st.session_state.is_ai_thinking = False
         st.session_state.streaming = False
         st.session_state.stream_parts = []
         st.session_state.stream_iterator = None
@@ -146,13 +146,14 @@ class AppState:
     def reset_chat(self):
         """Resets only the chat history."""
         st.session_state.messages = []
-        st.session_state.ai_thinking = False
+        st.session_state.is_ai_thinking = False
 
     def set_error(self, message: str):
         """Sets an error message and stops processing."""
         st.session_state.last_error = message
         st.session_state.processing = False
-        st.session_state.ai_thinking = False
+        if st.session_state.is_ai_thinking:
+            self.complete_ai_response()
 
     def clear_error(self):
         """Clears any existing error message."""
@@ -173,4 +174,8 @@ class AppState:
     def clear_scraped_content(self):
         st.session_state.scraped_content = ""
 
-    
+
+
+# Initialize app_state in session_state if it doesn't exist
+if "app_state" not in st.session_state:
+    st.session_state.app_state = AppState()

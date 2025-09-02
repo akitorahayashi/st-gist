@@ -6,11 +6,15 @@ from src.components.query_page.chat_ui import render_chat_messages
 from src.components.sidebar import render_sidebar
 from src.components.think_display import extract_think_content
 from src.services.summarization_service import SummarizationService
+from src.services.conversation_service import ConversationService
+from src.state import AppState
 
 
 def render_query_page():
     """Render query page with URL summary and chat functionality"""
-    app_state = st.session_state.app_state
+    app_state: AppState = st.session_state.app_state
+    svc: ConversationService = st.session_state.get("conversation_service")
+
     st.title("Query Page")
 
     # Display thinking content if available
@@ -31,83 +35,57 @@ def render_query_page():
     if app_state.current_thinking.strip() or app_state.page_summary.strip():
         st.markdown("---")
 
-    # is_thinkingフラグを決定
-    is_thinking = app_state.is_ai_thinking
-
     # Render sidebar
     render_sidebar()
 
-    # チャットメッセージのレンダリング
-    render_chat_messages(app_state.messages, is_thinking=is_thinking)
+    # --- Chat Logic --- #
+    # 既存のチャット履歴と、もしAIが思考中の場合はその状態も描画する
+    # st.session_state.messages にはユーザーメッセージとAIの最終応答のみが含まれる
+    render_chat_messages(app_state.messages)
 
-    # Handle user input
-    handle_user_input()
+    # チャット入力欄
+    prompt = st.chat_input("このWebページへの質問")
 
-    # Handle AI response
-    handle_ai_response()
+    # ユーザーが新しいメッセージを送信した場合
+    if prompt:
+        app_state.add_user_message(prompt) # ユーザーメッセージを状態に追加
+        st.rerun() # ページを再描画し、AIの応答生成フェーズへ移行する
 
-    # Check if AI should start thinking
-    check_start_ai_thinking()
-
-
-def handle_user_input():
-    """Handle user input in chat"""
-    app_state = st.session_state.app_state
-    if app_state.is_ai_thinking:
-        st.chat_input("AIが応答中です...", disabled=True)
-        return
-
-    user_input = st.chat_input("このWebページへの質問")
-    if user_input is not None and user_input.strip():
-        app_state.add_user_message(user_input.strip())
-        st.rerun()
-
-
-def handle_ai_response():
-    """Handle AI response processing by managing the stream with improved real-time processing."""
-    app_state = st.session_state.app_state
-
-    if app_state.is_ai_thinking and app_state.stream_iterator:
-        try:
-            # This part is no longer used for streaming, but we keep the structure
-            # in case we need to handle other async operations in the future.
-            pass
-        except Exception:
-            app_state.complete_ai_response()
-            app_state.set_stream_iterator(None)
-            st.rerun()
-
-
-def check_start_ai_thinking():
-    """
-    Check if the AI should start generating a response and manage the process.
-    """
-    app_state = st.session_state.app_state
-    svc = st.session_state.get("conversation_service")
-
-    # last message is from user AND we are not already thinking
-    if svc and svc.should_start_ai_thinking(
-        app_state.messages, app_state.is_ai_thinking
+    # 最後のメッセージがユーザーのものであり、まだAIが応答を生成していない場合
+    # ここでAIの応答生成を開始する
+    if (
+        app_state.messages
+        and app_state.messages[-1]["role"] == "user"
+        and not app_state.is_ai_thinking  # AIがすでに思考中でないことを確認
     ):
-        # Immediately set the state to thinking
+        # AIが思考中であることをUIに表示するための仮メッセージを追加
+        # これは render_chat_messages で 'Thinking...' として表示される
         app_state.start_ai_response()
-        user_message = app_state.messages[-1]["content"]
+        st.rerun() # Thinking... を表示するために再描画
 
-        try:
-            # This will block, but it's what we want.
-            # The "thinking" bubble will be displayed during this time.
-            full_response = asyncio.run(svc.generate_response_once(user_message))
-
-            # Add the complete AI message to the state
-            app_state.add_ai_message(full_response)
-
-        except Exception as e:
-            error_message = f"Ollama APIへのリクエスト中にエラーが発生しました: {e}"
-            app_state.set_error(error_message)
-        finally:
-            # End the thinking state and rerun to display the new message
-            app_state.complete_ai_response()
-            st.rerun()
+    # 'Thinking...' が表示された後、実際のAI応答を生成する
+    # is_ai_thinking が True で、最後のメッセージがユーザーのものである場合
+    if app_state.is_ai_thinking and app_state.messages[-1]["role"] == "user":
+        # Streamlitのスピナーで「Thinking...」を表示
+        with st.chat_message("ai"): # AIのメッセージバブル内でスピナーを表示
+            with st.spinner("Thinking..."):
+                try:
+                    user_message_content = app_state.messages[-1]["content"]
+                    response = asyncio.run(svc.generate_response_once(user_message_content))
+                    
+                    # 思考中状態を解除し、実際のAI応答を追加
+                    app_state.complete_ai_response()
+                    app_state.add_ai_message(response)
+                    st.rerun() # 実際のAI応答を表示するために再描画
+                    
+                except Exception as e:
+                    error_message = f"エラーが発生しました: {e}"
+                    st.error(error_message) # エラーをStreamlitのUIに直接表示
+                    
+                    # 思考中状態を解除し、エラーメッセージをチャット履歴に追加
+                    app_state.complete_ai_response()
+                    app_state.add_ai_message(error_message)
+                    st.rerun() # エラーメッセージを表示するために再描画
 
 
 def handle_stream_generation():
