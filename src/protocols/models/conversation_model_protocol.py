@@ -1,4 +1,4 @@
-from typing import Protocol, AsyncGenerator
+from typing import AsyncGenerator, Protocol
 
 
 class ConversationModelProtocol(Protocol):

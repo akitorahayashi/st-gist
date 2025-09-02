@@ -42,7 +42,6 @@ class MockStreamlitSessionState:
             del self._state[key]
 
 
-
 class TestMockClientIntegration:
     """Test suite for integration between MockConversationModel and MockOllamaApiClient"""
 

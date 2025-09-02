@@ -23,7 +23,7 @@ class MockConversationModel(ConversationModelProtocol):
             # Simulate streaming response
             mock_response = f"これは「{user_message}」に対するテスト用の応答です。"
             chunks = mock_response.split()
-            
+
             for chunk in chunks:
                 await asyncio.sleep(0.1)  # Simulate processing time
                 yield chunk + " "
@@ -36,7 +36,7 @@ class MockConversationModel(ConversationModelProtocol):
         """
         # Simulate processing time
         await asyncio.sleep(0.5)
-        
+
         # Generate different responses based on user input
         if "こんにちは" in user_message.lower() or "hello" in user_message.lower():
             return "こんにちは！何かお手伝いできることはありますか？"
@@ -96,7 +96,9 @@ class MockConversationModel(ConversationModelProtocol):
             start = text.find("<think>") + 7
             end = text.find("</think>")
             thinking_content = text[start:end].strip()
-            cleaned_text = text.replace(f"<think>{thinking_content}</think>", "").strip()
+            cleaned_text = text.replace(
+                f"<think>{thinking_content}</think>", ""
+            ).strip()
             return thinking_content, cleaned_text
         return "", text
 
