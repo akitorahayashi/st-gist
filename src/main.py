@@ -6,7 +6,7 @@ from src.clients.ollama_client import OllamaApiClient
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
 from src.services.conversation_service import ConversationService
-from src.state import AppState
+from src.app_state import AppState
 
 
 def main():
