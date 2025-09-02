@@ -155,3 +155,10 @@ Ready to proceed.""",
         full_response = f"<think>\n{thinking}\n</think>\n\n{response_text}"
 
         return self._stream_response(full_response)
+
+    async def generate_once(self, prompt: str, model: str = None) -> str:
+        """
+        Generates a complete mock response at once.
+        """
+        stream = self.generate(prompt, model)
+        return "".join([chunk async for chunk in stream])

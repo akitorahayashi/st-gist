@@ -91,3 +91,17 @@ class OllamaApiClient:
                 )
 
         return self._stream_response(prompt, model)
+
+    async def generate_once(self, prompt: str, model: str = None) -> str:
+        """
+        Generates a complete response from the Ollama API at once.
+
+        Args:
+            prompt: The prompt to send to the model.
+            model: The name of the model to use for generation.
+
+        Returns:
+            A single string with the complete response.
+        """
+        stream = self.generate(prompt, model)
+        return "".join([chunk async for chunk in stream])

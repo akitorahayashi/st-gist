@@ -31,13 +31,13 @@ def render_query_page():
     if app_state.current_thinking.strip() or app_state.page_summary.strip():
         st.markdown("---")
 
-    # Render sidebar
-    render_sidebar()
-
     # is_thinkingフラグを決定
     is_thinking = app_state.is_ai_thinking and not app_state.stream_iterator
 
-    # 思考バブルも含め、チャットメッセージのレンダリングを一元化
+    # Render sidebar
+    render_sidebar()
+
+    # チャットメッセージのレンダリング
     render_chat_messages(app_state.messages, is_thinking=is_thinking)
 
     # Handle user input
@@ -69,29 +69,10 @@ def handle_ai_response():
 
     if app_state.is_ai_thinking and app_state.stream_iterator:
         try:
-            # Get or create event loop
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            
-            # Process multiple chunks for better real-time experience
-            chunks_processed = 0
-            max_chunks_per_run = 5  # Process multiple chunks per rerun
-            
-            while chunks_processed < max_chunks_per_run:
-                try:
-                    chunk = loop.run_until_complete(app_state.stream_iterator.__anext__())
-                    app_state.update_ai_response(chunk)
-                    chunks_processed += 1
-                except StopAsyncIteration:
-                    app_state.complete_ai_response()
-                    app_state.set_stream_iterator(None)
-                    break
-            
-            st.rerun()
-        except StopAsyncIteration:
+            # This part is no longer used for streaming, but we keep the structure
+            # in case we need to handle other async operations in the future.
+            pass
+        except Exception:
             app_state.complete_ai_response()
             app_state.set_stream_iterator(None)
             st.rerun()
@@ -109,8 +90,21 @@ def check_start_ai_thinking():
         user_message = app_state.messages[-2][
             "content"
         ]  # User message is the second to last
-        stream_iterator = svc.generate_response(user_message)
-        app_state.set_stream_iterator(stream_iterator)
+
+        # Get or create event loop
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        # Run the async method to get the full response
+        full_response = loop.run_until_complete(svc.generate_response_once(user_message))
+
+        # Update state with the full response
+        app_state.update_ai_response(full_response)
+        app_state.complete_ai_response()
+
         st.rerun()
 
 

@@ -14,6 +14,12 @@ class ConversationService:
         async for chunk in self.client.generate(user_message):
             yield chunk
 
+    async def generate_response_once(self, user_message: str) -> str:
+        """
+        Generates a complete response from the client at once.
+        """
+        return await self.client.generate_once(user_message)
+
     def should_start_ai_thinking(self, messages: list, is_ai_thinking: bool) -> bool:
         """
         Check if AI thinking should be started based on the provided state.
