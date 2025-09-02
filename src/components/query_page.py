@@ -9,31 +9,38 @@ from src.services.summarization_service import SummarizationService
 from src.state import AppState
 
 
-def _render_user_message(message):
-    """Render user message without inline styles"""
-    return f"""
+def _render_chat_messages(messages, is_thinking=False):
+    """
+    Render all chat messages with a single style block by building a single HTML string.
+    Also renders the thinking bubble if is_thinking is True.
+    """
+    messages_html_list = []
+    for msg in messages:
+        if msg["role"] == "user":
+            messages_html_list.append(
+                f"""
     <div class="user-message">
         <div class="user-content">
-            {html.escape(message).replace(chr(10), '<br>')}
+            {html.escape(msg["content"]).replace(chr(10), '<br>')}
         </div>
     </div>
     """
-
-
-def _render_ai_message(message):
-    """Render AI message without inline styles"""
-    return f"""
+            )
+        else:
+            messages_html_list.append(
+                f"""
     <div class="ai-message">
         <div class="ai-content">
-            {html.escape(message).replace(chr(10), '<br>')}
+            {html.escape(msg["content"]).replace(chr(10), '<br>')}
         </div>
     </div>
     """
+            )
 
-
-def _render_thinking_bubble():
-    """Render AI thinking bubble without inline styles"""
-    return """
+    # is_thinkingがTrueの場合、思考中バブルをリストの末尾に追加
+    if is_thinking:
+        messages_html_list.append(
+            """
     <div class="thinking-message">
         <div class="thinking-content">
             <div style="display: flex; align-items: center;">
@@ -44,23 +51,7 @@ def _render_thinking_bubble():
         </div>
     </div>
     """
-
-
-def _render_chat_messages(messages, is_thinking=False):
-    """
-    Render all chat messages with a single style block by building a single HTML string.
-    Also renders the thinking bubble if is_thinking is True.
-    """
-    messages_html_list = []
-    for msg in messages:
-        if msg["role"] == "user":
-            messages_html_list.append(_render_user_message(msg["content"]))
-        else:
-            messages_html_list.append(_render_ai_message(msg["content"]))
-
-    # is_thinkingがTrueの場合、思考中バブルをリストの末尾に追加
-    if is_thinking:
-        messages_html_list.append(_render_thinking_bubble())
+        )
 
     messages_html_string = "".join(messages_html_list)
 
@@ -78,11 +69,13 @@ def render_query_page():
     app_state: AppState = st.session_state.app_state
     conv_s: ConversationService = st.session_state.get("conversation_service")
 
-    # Load external CSS for query page styling
-    st.markdown(
-        '<link href="/static/css/query_page.css" rel="stylesheet">',
-        unsafe_allow_html=True,
-    )
+    # Load CSS for query page styling
+    try:
+        with open("src/static/css/query_page.css", "r", encoding="utf-8") as f:
+            css_content = f.read()
+        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass  # CSS file not found, continue without styling
 
     st.title("Query Page")
 

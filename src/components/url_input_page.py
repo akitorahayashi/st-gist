@@ -19,11 +19,13 @@ def render_url_input_form():
     """Render URL input form with centered layout"""
     app_state = st.session_state.app_state
 
-    # Load external CSS for URL input page styling
-    st.markdown(
-        '<link href="/static/css/url_input_page.css" rel="stylesheet">',
-        unsafe_allow_html=True,
-    )
+    # Load CSS for URL input page styling
+    try:
+        with open("src/static/css/url_input_page.css", "r", encoding="utf-8") as f:
+            css_content = f.read()
+        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass  # CSS file not found, continue without styling
 
     with st.container():
         url = st.text_input(
