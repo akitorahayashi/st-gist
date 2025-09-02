@@ -6,8 +6,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../"))
 
-from dev.mocks.mock_ollama_client import MockOllamaApiClient
-from src.services.conversation_service import ConversationService
+from dev.mocks.clients.mock_ollama_client import MockOllamaApiClient
+from dev.mocks.models.mock_conversation_model import MockConversationModel
 
 
 class MockStreamlitSessionState:
@@ -42,8 +42,9 @@ class MockStreamlitSessionState:
             del self._state[key]
 
 
+
 class TestMockClientIntegration:
-    """Test suite for integration between ConversationService and MockOllamaApiClient"""
+    """Test suite for integration between MockConversationModel and MockOllamaApiClient"""
 
     @pytest.fixture
     def mock_st(self):
@@ -60,9 +61,9 @@ class TestMockClientIntegration:
         return MockOllamaApiClient()
 
     @pytest.fixture
-    def conversation_service(self, mock_client, mock_st):
-        """Create ConversationService with real mock client"""
-        return ConversationService(mock_client)
+    def mock_conversation_model(self, mock_client):
+        """Create MockConversationModel with mock client"""
+        return MockConversationModel(mock_client)
 
     @pytest.mark.asyncio
     async def test_mock_client_streaming(self, mock_client):
