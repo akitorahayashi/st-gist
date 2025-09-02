@@ -119,12 +119,10 @@ class AppState:
     def start_ai_response(self):
         """Sets the state for starting an AI response."""
         st.session_state.ai_thinking = True
-        st.session_state.messages.append({"role": "ai", "content": ""})
 
-    def update_ai_response(self, chunk: str):
-        """Updates the AI's streaming response."""
-        if self.messages and self.messages[-1]["role"] == "ai":
-            self.messages[-1]["content"] += chunk
+    def add_ai_message(self, content: str):
+        """Adds a new AI message to the chat history."""
+        st.session_state.messages.append({"role": "ai", "content": content})
 
     def complete_ai_response(self):
         """Sets the state for completing an AI response."""
@@ -175,6 +173,4 @@ class AppState:
     def clear_scraped_content(self):
         st.session_state.scraped_content = ""
 
-    def add_ai_message(self, content: str):
-        """Adds an AI message to the chat history."""
-        st.session_state.messages.append({"role": "ai", "content": content})
+    

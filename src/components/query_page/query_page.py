@@ -32,7 +32,7 @@ def render_query_page():
         st.markdown("---")
 
     # is_thinkingフラグを決定
-    is_thinking = app_state.is_ai_thinking and not app_state.stream_iterator
+    is_thinking = app_state.is_ai_thinking
 
     # Render sidebar
     render_sidebar()
@@ -79,33 +79,35 @@ def handle_ai_response():
 
 
 def check_start_ai_thinking():
-    """Check if AI should start thinking and initiate the stream."""
+    """
+    Check if the AI should start generating a response and manage the process.
+    """
     app_state = st.session_state.app_state
     svc = st.session_state.get("conversation_service")
 
+    # last message is from user AND we are not already thinking
     if svc and svc.should_start_ai_thinking(
         app_state.messages, app_state.is_ai_thinking
     ):
+        # Immediately set the state to thinking
         app_state.start_ai_response()
-        user_message = app_state.messages[-2][
-            "content"
-        ]  # User message is the second to last
+        user_message = app_state.messages[-1]["content"]
 
-        # Get or create event loop
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # This will block, but it's what we want.
+            # The "thinking" bubble will be displayed during this time.
+            full_response = asyncio.run(svc.generate_response_once(user_message))
 
-        # Run the async method to get the full response
-        full_response = loop.run_until_complete(svc.generate_response_once(user_message))
+            # Add the complete AI message to the state
+            app_state.add_ai_message(full_response)
 
-        # Update state with the full response
-        app_state.update_ai_response(full_response)
-        app_state.complete_ai_response()
-
-        st.rerun()
+        except Exception as e:
+            error_message = f"Ollama APIへのリクエスト中にエラーが発生しました: {e}"
+            app_state.set_error(error_message)
+        finally:
+            # End the thinking state and rerun to display the new message
+            app_state.complete_ai_response()
+            st.rerun()
 
 
 def handle_stream_generation():
