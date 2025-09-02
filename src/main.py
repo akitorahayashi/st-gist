@@ -16,11 +16,7 @@ load_dotenv()
 def main():
     initialize_session()
 
-    st.set_page_config(
-        page_title="Gist",
-        page_icon="📝",
-        layout="centered"
-    )
+    st.set_page_config(page_title="Gist", page_icon="📝", layout="centered")
 
     # Route based on page state using AppRouter and Page Enum
     if st.session_state.app_router.current_page == Page.CHAT:
@@ -42,7 +38,20 @@ def initialize_session():
 
             st.session_state.ollama_client = MockOllamaApiClient()
         else:
-            st.session_state.ollama_client = OllamaApiClient()
+            ollama_api_endpoint = os.getenv("OLLAMA_API_ENDPOINT")
+            if not ollama_api_endpoint:
+                # Fallback to Streamlit secrets if available
+                try:
+                    ollama_api_endpoint = st.secrets.get("OLLAMA_API_ENDPOINT")
+                except Exception:
+                    pass
+
+            if not ollama_api_endpoint:
+                raise ValueError(
+                    "OLLAMA_API_ENDPOINT is not configured in environment variables or Streamlit secrets."
+                )
+
+            st.session_state.ollama_client = OllamaApiClient(ollama_api_endpoint)
 
     # Initialize conversation model
     if "conversation_model" not in st.session_state:

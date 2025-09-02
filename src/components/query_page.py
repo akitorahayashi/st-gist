@@ -86,7 +86,11 @@ def render_query_page():
                     if summary_content.strip():
                         with summary_placeholder.container():
                             st.markdown("### 📝 要約コンテンツ")
-                            _, clean_summary_content = conversation_model.extract_think_content(summary_content)
+                            _, clean_summary_content = (
+                                conversation_model.extract_think_content(
+                                    summary_content
+                                )
+                            )
                             st.markdown(clean_summary_content)
 
             asyncio.run(handle_streaming())
@@ -120,7 +124,7 @@ def render_query_page():
     if conversation_model.should_respond():
         conversation_model.is_responding = True
         st.rerun()
-    
+
     # Handle AI response generation
     if conversation_model.is_responding:
         try:

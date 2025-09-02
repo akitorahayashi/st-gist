@@ -70,7 +70,7 @@ def render_url_input_form():
                 return
             try:
                 scraping_model.validate_url(current_url.strip())
-                    
+
                 app_router.set_target_url(current_url.strip())
                 scraping_model.is_scraping = True
             except ValueError as e:
