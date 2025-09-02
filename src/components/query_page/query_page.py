@@ -4,6 +4,7 @@ import streamlit as st
 
 from src.components.query_page.chat_ui import (
     render_chat_messages,
+    render_thinking_bubble,
 )
 from src.components.sidebar import render_sidebar
 from src.components.think_display import extract_think_content
@@ -39,6 +40,10 @@ def render_query_page():
     # Render chat messages
     render_chat_messages(app_state.messages)
 
+    # Show thinking bubble if AI is thinking but hasn't started streaming yet
+    if app_state.is_ai_thinking and not app_state.stream_iterator:
+        st.markdown(render_thinking_bubble(), unsafe_allow_html=True)
+
     # Handle user input
     handle_user_input()
 
@@ -63,7 +68,7 @@ def handle_user_input():
 
 
 def handle_ai_response():
-    """Handle AI response processing by managing the stream."""
+    """Handle AI response processing by managing the stream with improved real-time processing."""
     app_state = st.session_state.app_state
 
     if app_state.is_ai_thinking and app_state.stream_iterator:
@@ -75,8 +80,20 @@ def handle_ai_response():
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
             
-            chunk = loop.run_until_complete(app_state.stream_iterator.__anext__())
-            app_state.update_ai_response(chunk)
+            # Process multiple chunks for better real-time experience
+            chunks_processed = 0
+            max_chunks_per_run = 5  # Process multiple chunks per rerun
+            
+            while chunks_processed < max_chunks_per_run:
+                try:
+                    chunk = loop.run_until_complete(app_state.stream_iterator.__anext__())
+                    app_state.update_ai_response(chunk)
+                    chunks_processed += 1
+                except StopAsyncIteration:
+                    app_state.complete_ai_response()
+                    app_state.set_stream_iterator(None)
+                    break
+            
             st.rerun()
         except StopAsyncIteration:
             app_state.complete_ai_response()
@@ -121,7 +138,7 @@ def handle_stream_generation():
         st.rerun()
         return
 
-    # Handle streaming process
+    # Handle streaming process with improved real-time processing
     if app_state.is_streaming and app_state.stream_iterator:
         try:
             # Get or create event loop
@@ -131,31 +148,51 @@ def handle_stream_generation():
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
             
-            chunk = loop.run_until_complete(app_state.stream_iterator.__anext__())
-            app_state.append_stream_part(chunk)
-            current_response = "".join(app_state.stream_parts)
+            # Process multiple chunks for smoother streaming
+            chunks_processed = 0
+            max_chunks_per_run = 3  # Process multiple chunks per rerun for summarization
+            
+            while chunks_processed < max_chunks_per_run:
+                try:
+                    chunk = loop.run_until_complete(app_state.stream_iterator.__anext__())
+                    app_state.append_stream_part(chunk)
+                    chunks_processed += 1
+                    
+                    # Update display after each chunk
+                    current_response = "".join(app_state.stream_parts)
+                    thinking_content, summary_content = "", ""
+                    last_think_start = current_response.rfind("<think>")
+                    last_think_end = current_response.rfind("</think>")
 
-            thinking_content, summary_content = "", ""
-            last_think_start = current_response.rfind("<think>")
-            last_think_end = current_response.rfind("</think>")
+                    if last_think_start != -1:
+                        summary_before_think = current_response[:last_think_start]
+                        if last_think_end > last_think_start:
+                            thinking_content = current_response[
+                                last_think_start + 7 : last_think_end
+                            ]
+                            summary_content = (
+                                summary_before_think
+                                + current_response[last_think_end + 8 :]
+                            )
+                        else:
+                            thinking_content = current_response[last_think_start + 7 :]
+                            summary_content = summary_before_think
+                    else:
+                        summary_content = current_response
 
-            if last_think_start != -1:
-                summary_before_think = current_response[:last_think_start]
-                if last_think_end > last_think_start:
-                    thinking_content = current_response[
-                        last_think_start + 7 : last_think_end
-                    ]
-                    summary_content = (
-                        summary_before_think
-                        + current_response[last_think_end + 8 :]
-                    )
-                else:
-                    thinking_content = current_response[last_think_start + 7 :]
-                    summary_content = summary_before_think
-            else:
-                summary_content = current_response
+                    app_state.set_summary_and_thinking(summary_content, thinking_content)
+                    
+                except StopAsyncIteration:
+                    final_response = "".join(app_state.stream_parts)
+                    thinking_content, summary_content = extract_think_content(final_response)
+                    app_state.set_summary_and_thinking(summary_content, thinking_content)
 
-            app_state.set_summary_and_thinking(summary_content, thinking_content)
+                    app_state.set_streaming(False)
+                    app_state.clear_scraped_content()
+                    app_state.set_stream_iterator(None)
+                    app_state.clear_stream_parts()
+                    break
+            
             st.rerun()
         except StopAsyncIteration:
             final_response = "".join(app_state.stream_parts)
