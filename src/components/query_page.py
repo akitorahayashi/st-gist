@@ -41,6 +41,12 @@ def render_query_page():
     if target_url:
         st.markdown(f"**対象URL**: {target_url}")
 
+    # Debug component: Display scraped content
+    if scraped_content:
+        with st.expander("🔍 デバッグ: スクレイピングコンテンツ", expanded=False):
+            st.write("**スクレイピングされたコンテンツ:**")
+            st.write(scraped_content)
+
     # Display thinking content if available
     if current_thinking.strip():
         st.markdown("### 🤔 AI の思考過程")
@@ -60,21 +66,32 @@ def render_query_page():
         and not summarization_model.is_summarizing
     ):
         try:
+            # Create placeholders for streaming content
+            thinking_placeholder = st.empty()
+            summary_placeholder = st.empty()
+            
             # Use the new streaming method that yields content
             async def handle_streaming():
                 async for (
                     thinking_content,
                     summary_content,
                 ) in summarization_model.stream_summary(scraped_content):
-                    # Update summarization_service with the streamed content
-                    # Note: These are automatically updated in the service during streaming
-                    # We just need to trigger a rerun to update the UI
-                    st.rerun()
+                    # Update placeholders with streamed content
+                    if thinking_content.strip():
+                        with thinking_placeholder.container():
+                            st.markdown("### 🤔 AI の思考過程")
+                            with st.expander("思考プロセス", expanded=True):
+                                st.markdown(thinking_content)
+                    
+                    if summary_content.strip():
+                        with summary_placeholder.container():
+                            st.markdown("### 📝 要約コンテンツ")
+                            st.markdown(summary_content)
 
             asyncio.run(handle_streaming())
         except Exception as e:
             summarization_model.last_error = f"要約の生成中にエラーが発生しました: {str(e)}"
-            st.rerun()
+            st.error(summarization_model.last_error)
 
     # Add divider before chat if we have content
     if current_thinking.strip() or page_summary.strip():

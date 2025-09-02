@@ -6,6 +6,7 @@ def render_sidebar():
     app_router = st.session_state.app_router
 
     with st.sidebar:
+        
         if st.button(
             "🏠 New URL",
             help="新しいURLを入力するページに戻る",
