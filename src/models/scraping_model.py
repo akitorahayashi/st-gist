@@ -6,7 +6,11 @@ import requests
 from bs4 import BeautifulSoup
 
 
-class ScrapingService:
+class ScrapingModel:
+    def __init__(self):
+        self.content = None
+        self.is_scraping = False
+
     def validate_url(self, url: str) -> None:
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
@@ -45,6 +49,7 @@ class ScrapingService:
         return False
 
     def scrape(self, url: str, timeout=(30, 90)) -> str:
+        self.is_scraping = True
         try:
             self.validate_url(url)
 
@@ -62,6 +67,7 @@ class ScrapingService:
             # 明らかに非 HTML のレスポンスは早期リターン
             ctype = (response.headers.get("Content-Type") or "").lower()
             if not ("html" in ctype or ctype.startswith("text/")):
+                self.content = ""
                 return ""
 
             soup = BeautifulSoup(response.content, "html.parser")
@@ -70,10 +76,21 @@ class ScrapingService:
             ):
                 element.decompose()
             if soup.body:
-                return soup.body.get_text(separator=" ", strip=True)
-            return ""
+                content = soup.body.get_text(separator=" ", strip=True)
+            else:
+                content = ""
+
+            self.content = content
+            return content
         except Exception as e:
             # 予期しないエラーの場合
             if not isinstance(e, ValueError):
                 raise ValueError(f"予期しないエラーが発生しました: {str(e)}") from e
             raise
+        finally:
+            self.is_scraping = False
+
+    def reset(self):
+        """Reset the scraping model state."""
+        self.content = None
+        self.is_scraping = False

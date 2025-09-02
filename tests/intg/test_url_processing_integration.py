@@ -178,10 +178,10 @@ class TestUrlProcessingIntegration:
 
             # Simulate streaming chunks during summarization
             url = "https://example.com"
-            scraped_content = self.mock_scraping_service.scrape(url)
+            self.mock_scraping_service.scrape(url)
 
             # Create summarization service
-            summarization_service = self.mock_summarization_service
+            self.mock_summarization_service
 
             # Simulate streaming with think tags
             summary_parts = []

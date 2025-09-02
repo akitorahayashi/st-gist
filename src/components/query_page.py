@@ -4,21 +4,16 @@ import html
 import streamlit as st
 
 from src.components.sidebar import render_sidebar
-from src.services.conversation_service import ConversationService
-from src.services.summarization_service import SummarizationService
-from src.app_state import AppState
+from src.models import ConversationModel
 
 
 def render_query_page():
     """Render query page with URL summary and chat functionality"""
-    app_state: AppState = st.session_state.app_state
-    conv_s: ConversationService = st.session_state.get("conversation_service")
-    
-    # Initialize summarization service
-    ollama_client = st.session_state.get("ollama_client")
-    summarization_service = None
-    if ollama_client:
-        summarization_service = SummarizationService(ollama_client)
+    app_router = st.session_state.app_router
+    conversation_model: ConversationModel = st.session_state.get("conversation_model")
+
+    # Get summarization model from session_state
+    summarization_model = st.session_state.get("summarization_model")
 
     # Load CSS for query page styling
     try:
@@ -30,63 +25,89 @@ def render_query_page():
 
     st.title("Query Page")
 
+    # Get scraping model from session_state
+    scraping_model = st.session_state.get("scraping_model")
+
+    # Get all necessary data from models and session_state
+    target_url = st.session_state.get("target_url", "")
+    current_thinking = summarization_model.thinking if summarization_model else ""
+    page_summary = summarization_model.summary if summarization_model else ""
+    scraped_content = scraping_model.content if scraping_model else ""
+
+    # Display target URL if available
+    if target_url:
+        st.markdown(f"**対象URL**: {target_url}")
+
     # Display thinking content if available
-    if app_state.current_thinking.strip():
+    if current_thinking.strip():
         st.markdown("### 🤔 AI の思考過程")
         with st.expander("思考プロセス", expanded=True):
-            st.markdown(app_state.current_thinking)
+            st.markdown(current_thinking)
 
     # Display summary content
-    if app_state.page_summary.strip():
+    if page_summary.strip():
         st.markdown("### 📝 要約コンテンツ")
-        st.markdown(app_state.page_summary)
+        st.markdown(page_summary)
 
     # Handle stream generation from scraped content
-    if summarization_service and (app_state.scraped_content and not (app_state.page_summary or app_state.current_thinking) and not app_state.is_streaming):
-        asyncio.run(summarization_service.stream_summary(app_state))
-        st.rerun()
-    elif app_state.is_streaming and summarization_service:
-        asyncio.run(summarization_service.stream_summary(app_state))
-        st.rerun()
+    if (
+        summarization_model
+        and scraped_content
+        and not (page_summary or current_thinking)
+    ):
+        try:
+            # Use the new streaming method that yields content
+            async def handle_streaming():
+                async for (
+                    thinking_content,
+                    summary_content,
+                ) in summarization_model.stream_summary(scraped_content):
+                    # Update summarization_service with the streamed content
+                    # Note: These are automatically updated in the service during streaming
+                    # We just need to trigger a rerun to update the UI
+                    st.rerun()
+
+            asyncio.run(handle_streaming())
+        except Exception as e:
+            app_router.set_error(f"要約の生成中にエラーが発生しました: {str(e)}")
+            st.rerun()
 
     # Add divider before chat if we have content
-    if app_state.current_thinking.strip() or app_state.page_summary.strip():
+    if current_thinking.strip() or page_summary.strip():
         st.markdown("---")
 
     # Render sidebar
     render_sidebar()
 
     # --- Chat Logic --- #
-    _render_chat_messages(app_state.messages, is_thinking=app_state.is_ai_thinking)
+    _render_chat_messages(
+        conversation_model.messages, is_thinking=conversation_model.is_responding
+    )
 
-    prompt = st.chat_input("このWebページへの質問", disabled=app_state.is_ai_thinking)
+    prompt = st.chat_input(
+        "このWebページへの質問", disabled=conversation_model.is_responding
+    )
 
     if prompt:
-        app_state.add_user_message(prompt)
-        app_state.start_ai_response()  # Set thinking to True
+        conversation_model.add_user_message(prompt)
         st.rerun()
 
-    # If the last message is from the user and we are in the thinking state
-    if (
-        app_state.is_ai_thinking
-        and app_state.messages
-        and app_state.messages[-1]["role"] == "user"
-    ):
+    # If the last message is from the user and we should respond
+    if conversation_model.should_respond():
         try:
             response = asyncio.run(
-                conv_s.generate_response_once(app_state.messages[-1]["content"])
+                conversation_model.respond_to_user_message(
+                    conversation_model.messages[-1]["content"]
+                )
             )
-            _, clean_response = conv_s.extract_think_content(response)
-            app_state.add_ai_message(clean_response)
+            _, clean_response = conversation_model.extract_think_content(response)
+            conversation_model.add_ai_message(clean_response)
         except Exception as e:
             error_message = f"エラーが発生しました: {e}"
-            app_state.set_error(error_message)  # This will also complete_ai_response
-            _, clean_error = conv_s.extract_think_content(error_message)
-            app_state.add_ai_message(clean_error)
+            app_router.set_error(error_message)
+            _, clean_error = conversation_model.extract_think_content(error_message)
+            conversation_model.add_ai_message(clean_error)
         finally:
-            # This might be redundant if set_error is called, but it's safe
-            if app_state.is_ai_thinking:
-                app_state.complete_ai_response()
             st.rerun()
 
 
@@ -143,5 +164,3 @@ def _render_chat_messages(messages, is_thinking=False):
     """
 
     st.markdown(full_html, unsafe_allow_html=True)
-
-

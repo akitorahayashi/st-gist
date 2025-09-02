@@ -30,7 +30,7 @@ class TestOllamaApiClient:
             with patch.object(self.client, "_stream_response") as mock_stream:
                 mock_stream.return_value = AsyncMock()
 
-                result = self.client.generate("test prompt")
+                self.client.generate("test prompt")
 
                 mock_stream.assert_called_once_with("test prompt", "default-model")
 
@@ -39,7 +39,7 @@ class TestOllamaApiClient:
         with patch.object(self.client, "_stream_response") as mock_stream:
             mock_stream.return_value = AsyncMock()
 
-            result = self.client.generate("test prompt", "custom-model")
+            self.client.generate("test prompt", "custom-model")
 
             mock_stream.assert_called_once_with("test prompt", "custom-model")
 

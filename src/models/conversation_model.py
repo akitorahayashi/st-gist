@@ -4,9 +4,11 @@ from typing import Any, AsyncGenerator
 import streamlit as st
 
 
-class ConversationService:
+class ConversationModel:
     def __init__(self, client: Any):
         self.client = client
+        self.messages = []
+        self.is_responding = False
 
     async def generate_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """
@@ -21,12 +23,50 @@ class ConversationService:
         """
         return await self.client.generate_once(user_message)
 
-    def should_start_ai_thinking(self, messages: list, is_ai_thinking: bool) -> bool:
+    async def respond_to_user_message(self, user_message: str) -> str:
         """
-        Check if AI thinking should be started based on the provided state.
+        Generate a response to user message with automatic state management.
+
+        Args:
+            user_message: The user's message to respond to
+
+        Returns:
+            str: The AI's response
+        """
+        self.is_responding = True
+        try:
+            response = await self.generate_response_once(user_message)
+            return response
+        finally:
+            self.is_responding = False
+
+    def add_user_message(self, content: str):
+        """
+        Add a user message to the chat history.
+        """
+        self.messages.append({"role": "user", "content": content})
+
+    def add_ai_message(self, content: str):
+        """
+        Add an AI message to the chat history.
+        """
+        self.messages.append({"role": "ai", "content": content})
+
+    def reset(self):
+        """
+        Reset the chat history.
+        """
+        self.messages = []
+        self.is_responding = False
+
+    def should_respond(self) -> bool:
+        """
+        Check if AI should respond based on the internal message state.
         """
         return (
-            len(messages) > 0 and messages[-1]["role"] == "user" and not is_ai_thinking
+            len(self.messages) > 0
+            and self.messages[-1]["role"] == "user"
+            and not self.is_responding
         )
 
     def extract_think_content(self, text: str) -> tuple[str, str]:
