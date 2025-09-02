@@ -119,9 +119,14 @@ def render_url_input_form():
                 try:
                     ScrapingService().validate_url(url.strip())
                     app_state.start_summarization(url.strip())
+                    scraped_content = ScrapingService().scrape(url.strip())
+                    app_state.complete_summarization(scraped_content)
                     st.rerun()
                 except ValueError as e:
                     app_state.set_error(f"{str(e)}")
+                    st.rerun()
+                except Exception as e:
+                    app_state.set_error(f"エラーが発生しました: {str(e)}")
                     st.rerun()
             else:
                 app_state.set_error("URLを入力してください")

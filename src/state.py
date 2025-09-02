@@ -97,16 +97,13 @@ class AppState:
         """Starts the summarization process."""
         self.clear_error()
         st.session_state.processing = True
-        st.session_state.is_ai_thinking = True
         st.session_state.target_url = url
-        st.session_state.show_chat = False
 
     def complete_summarization(self, scraped_content: str):
         """Completes the summarization process."""
         st.session_state.processing = False
         st.session_state.scraped_content = scraped_content
         st.session_state.show_chat = True
-        st.session_state.target_url = ""
 
     def set_summary_and_thinking(self, summary: str, thinking: str):
         """Sets the summary and thinking content."""
