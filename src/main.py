@@ -16,7 +16,7 @@ def main():
 
     # Complete component switching - only one renders at a time
     if app_state.show_chat:
-        st.set_page_config(layout="wide")
+        st.set_page_config(layout="centered")
         render_query_page()
     else:
         st.set_page_config(layout="centered")
