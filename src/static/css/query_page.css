@@ -3,12 +3,14 @@
     margin: 0 auto;
     padding: 0 16px;
 }
+
 .user-message {
     display: flex;
     align-items: flex-start;
     justify-content: flex-end;
     margin: 10px 0;
 }
+
 .user-content {
     background-color: #007bff;
     color: white;
@@ -17,12 +19,14 @@
     border-radius: 20px;
     word-wrap: break-word;
 }
+
 .ai-message {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
     margin: 10px 0;
 }
+
 .ai-content {
     background-color: #f1f1f1;
     color: #333;
@@ -31,12 +35,14 @@
     border-radius: 20px;
     word-wrap: break-word;
 }
+
 .thinking-message {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
     margin: 10px 0;
 }
+
 .thinking-content {
     background-color: #f1f1f1;
     color: #333;
@@ -44,15 +50,26 @@
     padding: 12px 16px;
     border-radius: 20px;
 }
+
 .thinking-dots {
     animation: thinking 1.5s infinite;
 }
+
 @keyframes thinking {
-    0%, 50%, 100% { opacity: 1; }
-    25%, 75% { opacity: 0.5; }
+
+    0%,
+    50%,
+    100% {
+        opacity: 1;
+    }
+
+    25%,
+    75% {
+        opacity: 0.5;
+    }
 }
 
-/* Thinking display styles from think_display.py */
+/* Thinking display styles for expandable sections */
 .thinking-container {
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -71,10 +88,4 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.thinking-content {
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-wrap: break-word;
 }

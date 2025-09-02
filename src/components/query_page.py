@@ -117,6 +117,11 @@ def render_query_page():
 
     # If the last message is from the user and we should respond
     if conversation_model.should_respond():
+        conversation_model.is_responding = True
+        st.rerun()
+    
+    # Handle AI response generation
+    if conversation_model.is_responding:
         try:
             response = asyncio.run(
                 conversation_model.respond_to_user_message(
@@ -131,6 +136,7 @@ def render_query_page():
             _, clean_error = conversation_model.extract_think_content(error_message)
             conversation_model.add_ai_message(clean_error)
         finally:
+            conversation_model.is_responding = False
             st.rerun()
 
 
