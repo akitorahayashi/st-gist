@@ -11,6 +11,7 @@ def render_query_page():
     """Render query page with URL summary and chat functionality"""
     # Clear all previous page components immediately
     st.empty()
+
     conversation_model: ConversationModel = st.session_state.get("conversation_model")
 
     # Get summarization model from session_state

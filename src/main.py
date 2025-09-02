@@ -16,7 +16,11 @@ load_dotenv()
 def main():
     initialize_session()
 
-    st.set_page_config(layout="centered")
+    st.set_page_config(
+        page_title="Gist",
+        page_icon="📝",
+        layout="centered"
+    )
 
     # Route based on page state using AppRouter and Page Enum
     if st.session_state.app_router.current_page == Page.CHAT:

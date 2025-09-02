@@ -36,12 +36,7 @@ class AppRouter:
         st.session_state.page = Page.INPUT
 
         # Reset all model states
-        if "scraping_model" in st.session_state:
-            st.session_state.scraping_model.reset()
-        if "summarization_model" in st.session_state:
-            st.session_state.summarization_model.reset()
-        if "conversation_model" in st.session_state:
-            st.session_state.conversation_model.reset()
+        st.session_state.clear()
 
     def go_to_chat_page(self):
         """Navigate to chat page."""
