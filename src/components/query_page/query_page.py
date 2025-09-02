@@ -5,8 +5,8 @@ import streamlit as st
 from src.components.query_page.chat_ui import render_chat_messages
 from src.components.sidebar import render_sidebar
 from src.components.think_display import extract_think_content
-from src.services.summarization_service import SummarizationService
 from src.services.conversation_service import ConversationService
+from src.services.summarization_service import SummarizationService
 from src.state import AppState
 
 
@@ -49,9 +49,15 @@ def render_query_page():
         st.rerun()
 
     # If the last message is from the user and we are in the thinking state
-    if app_state.is_ai_thinking and app_state.messages and app_state.messages[-1]["role"] == "user":
+    if (
+        app_state.is_ai_thinking
+        and app_state.messages
+        and app_state.messages[-1]["role"] == "user"
+    ):
         try:
-            response = asyncio.run(svc.generate_response_once(app_state.messages[-1]["content"]))
+            response = asyncio.run(
+                svc.generate_response_once(app_state.messages[-1]["content"])
+            )
             _, clean_response = extract_think_content(response)
             app_state.add_ai_message(clean_response)
         except Exception as e:
@@ -95,17 +101,21 @@ def handle_stream_generation():
             except RuntimeError:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-            
+
             # Process multiple chunks for smoother streaming
             chunks_processed = 0
-            max_chunks_per_run = 3  # Process multiple chunks per rerun for summarization
-            
+            max_chunks_per_run = (
+                3  # Process multiple chunks per rerun for summarization
+            )
+
             while chunks_processed < max_chunks_per_run:
                 try:
-                    chunk = loop.run_until_complete(app_state.stream_iterator.__anext__())
+                    chunk = loop.run_until_complete(
+                        app_state.stream_iterator.__anext__()
+                    )
                     app_state.append_stream_part(chunk)
                     chunks_processed += 1
-                    
+
                     # Update display after each chunk
                     current_response = "".join(app_state.stream_parts)
                     thinking_content, summary_content = "", ""
@@ -128,19 +138,25 @@ def handle_stream_generation():
                     else:
                         summary_content = current_response
 
-                    app_state.set_summary_and_thinking(summary_content, thinking_content)
-                    
+                    app_state.set_summary_and_thinking(
+                        summary_content, thinking_content
+                    )
+
                 except StopAsyncIteration:
                     final_response = "".join(app_state.stream_parts)
-                    thinking_content, summary_content = extract_think_content(final_response)
-                    app_state.set_summary_and_thinking(summary_content, thinking_content)
+                    thinking_content, summary_content = extract_think_content(
+                        final_response
+                    )
+                    app_state.set_summary_and_thinking(
+                        summary_content, thinking_content
+                    )
 
                     app_state.set_streaming(False)
                     app_state.clear_scraped_content()
                     app_state.set_stream_iterator(None)
                     app_state.clear_stream_parts()
                     break
-            
+
             st.rerun()
         except StopAsyncIteration:
             final_response = "".join(app_state.stream_parts)

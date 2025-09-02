@@ -103,7 +103,7 @@ def render_ai_message(message):
 
 def render_thinking_bubble():
     """Render AI thinking bubble without inline styles"""
-    return '''
+    return """
     <div class="thinking-message">
         <div class="thinking-content">
             <div style="display: flex; align-items: center;">
@@ -113,7 +113,7 @@ def render_thinking_bubble():
             </div>
         </div>
     </div>
-    '''
+    """
 
 
 def render_chat_messages(messages, is_thinking=False):
@@ -127,7 +127,7 @@ def render_chat_messages(messages, is_thinking=False):
             messages_html_list.append(render_user_message(msg["content"]))
         else:
             messages_html_list.append(render_ai_message(msg["content"]))
-            
+
     # is_thinkingがTrueの場合、思考中バブルをリストの末尾に追加
     if is_thinking:
         messages_html_list.append(render_thinking_bubble())

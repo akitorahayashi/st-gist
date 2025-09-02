@@ -176,7 +176,6 @@ class AppState:
         st.session_state.scraped_content = ""
 
 
-
 # Initialize app_state in session_state if it doesn't exist
 if "app_state" not in st.session_state:
     st.session_state.app_state = AppState()

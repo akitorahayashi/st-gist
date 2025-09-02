@@ -106,7 +106,9 @@ def render_url_input_form():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        button_text = "ページの内容を取得中..." if app_state.is_processing else "要約を開始"
+        button_text = (
+            "ページの内容を取得中..." if app_state.is_processing else "要約を開始"
+        )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
