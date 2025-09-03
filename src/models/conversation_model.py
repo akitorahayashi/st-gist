@@ -32,19 +32,66 @@ class ConversationModel(ConversationModelProtocol):
         """
         return await self.client.generate_once(user_message)
 
-    async def respond_to_user_message(self, user_message: str) -> str:
+    async def respond_to_user_message(self, user_message: str, summary: str = "", scraped_content: str = "") -> str:
         """
-        Generate a response to user message with automatic state management.
+        Generate a response to user message with automatic state management using Web Page Q&A format.
 
         Args:
             user_message: The user's message to respond to
+            summary: The summarization of the web page
+            scraped_content: The scraped content from the web page
 
         Returns:
             str: The AI's response
         """
         self.is_responding = True
         try:
-            response = await self.generate_response_once(user_message)
+            # Build the Web Page Q&A prompt
+            qa_prompt = f"""# AI Prompt
+
+## Role
+
+You are a "Web Page Q&A Bot".
+
+## Context
+
+You will be given the text content of a web page and a user's question. Your task is to answer the question based strictly on the provided text.
+
+## Instructions
+
+1. Analyze the user's question.
+
+2. Carefully scan the provided "Web Page Text" to find the relevant information to answer the question.
+
+3. Formulate a concise and accurate answer based *only* on the information found in the text.
+
+## Constraints
+
+- **DO NOT** use any external knowledge or information outside of the provided "Web Page Text".
+
+- **MUST** respond in the same language as the user's question.
+
+- If the answer cannot be found within the text, you **MUST** respond with: "I could not find the answer to your question in the provided text." (in the same language as the user's question)
+
+- Do not invent, assume, or infer any information that is not explicitly stated in the text.
+
+---
+
+## [Input Placeholders]
+
+### Your Summarization:
+
+{summary}
+
+### User Question:
+
+{user_message}
+
+### Web Page Text:
+
+{scraped_content}"""
+
+            response = await self.generate_response_once(qa_prompt)
             return response
         finally:
             self.is_responding = False
