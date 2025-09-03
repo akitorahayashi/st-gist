@@ -1,3 +1,4 @@
+import asyncio
 import html
 
 import streamlit as st
@@ -37,17 +38,21 @@ def render_query_page():
 
     # Display target URL if available
     if target_url:
-        st.markdown(f"**対象URL**: {target_url}")
+        # Truncate URL if longer than 50 characters but keep it clickable
+        if len(target_url) > 50:
+            truncated_url = target_url[:47] + "..."
+            st.markdown(f"**対象URL**: [{truncated_url}]({target_url})")
+        else:
+            st.markdown(f"**対象URL**: [{target_url}]({target_url})")
 
     # Debug component: Display scraped content
     if scraped_content:
-        with st.expander("🔍 デバッグ: スクレイピングコンテンツ", expanded=False):
-            st.write("**スクレイピングされたコンテンツ:**")
+        with st.expander("取得したコンテンツ", expanded=False):
             st.write(scraped_content)
 
     # Display thinking content if available
     if current_thinking.strip():
-        st.markdown("### 🤔 AI の思考過程")
+        st.markdown("### 🤔 思考過程")
         with st.expander("思考プロセス", expanded=True):
             st.markdown(current_thinking)
 
@@ -64,61 +69,59 @@ def render_query_page():
         and not (page_summary or current_thinking)
         and not summarization_model.is_summarizing
     ):
-        try:
-            # Create placeholders for streaming content
-            thinking_placeholder = st.empty()
-            summary_placeholder = st.empty()
-
-            # Convert async streaming to synchronous chunk-by-chunk processing
-            import asyncio
-
-            # Create new event loop for synchronous processing
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
+        with st.spinner("要約を開始しています..."):
             try:
-                # Get async generator
-                async_gen = summarization_model.stream_summary(scraped_content)
+                # Create placeholders for streaming content
+                thinking_placeholder = st.empty()
+                summary_placeholder = st.empty()
 
-                # Process each chunk synchronously
-                while True:
-                    try:
-                        thinking_content, summary_content = loop.run_until_complete(
-                            anext(async_gen)
-                        )
+                # Create new event loop for synchronous processing
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
 
-                        # Update placeholders with streamed content
-                        if thinking_content.strip():
-                            with thinking_placeholder.container():
-                                st.markdown("### 🤔 AI の思考過程")
-                                with st.expander("思考プロセス", expanded=True):
-                                    st.markdown(thinking_content)
+                try:
+                    # Get async generator
+                    async_gen = summarization_model.stream_summary(scraped_content)
 
-                        if summary_content.strip():
-                            with summary_placeholder.container():
-                                st.markdown("### 📝 要約コンテンツ")
-                                _, clean_summary_content = (
-                                    conversation_model.extract_think_content(
-                                        summary_content
+                    # Process each chunk synchronously
+                    while True:
+                        try:
+                            thinking_content, summary_content = loop.run_until_complete(
+                                anext(async_gen)
+                            )
+
+                            # Update placeholders with streamed content
+                            if thinking_content.strip():
+                                with thinking_placeholder.container():
+                                    st.markdown("### 🤔 思考過程")
+                                    with st.expander("思考プロセス", expanded=True):
+                                        st.markdown(thinking_content)
+
+                            if summary_content.strip():
+                                with summary_placeholder.container():
+                                    st.markdown("### 📝 要約コンテンツ")
+                                    _, clean_summary_content = (
+                                        conversation_model.extract_think_content(
+                                            summary_content
+                                        )
                                     )
-                                )
-                                st.markdown(clean_summary_content)
+                                    st.markdown(clean_summary_content)
 
-                        # Small delay to allow UI updates
-                        import time
+                            # Small delay to allow UI updates
+                            import time
 
-                        time.sleep(0.01)
+                            time.sleep(0.01)
 
-                    except StopAsyncIteration:
-                        break
+                        except StopAsyncIteration:
+                            break
 
-            finally:
-                loop.close()
-        except Exception as e:
-            summarization_model.last_error = (
-                f"要約の生成中にエラーが発生しました: {str(e)}"
-            )
-            st.error(summarization_model.last_error)
+                finally:
+                    loop.close()
+            except Exception as e:
+                summarization_model.last_error = (
+                    f"要約の生成中にエラーが発生しました: {str(e)}"
+                )
+                st.error(summarization_model.last_error)
 
     # Add divider before chat if we have content
     if current_thinking.strip() or page_summary.strip():
@@ -150,7 +153,9 @@ def render_query_page():
         try:
             response = asyncio.run(
                 conversation_model.respond_to_user_message(
-                    conversation_model.messages[-1]["content"]
+                    conversation_model.messages[-1]["content"],
+                    summary=page_summary,
+                    scraped_content=scraped_content,
                 )
             )
             _, clean_response = conversation_model.extract_think_content(response)

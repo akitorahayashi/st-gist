@@ -1,4 +1,5 @@
-from unittest.mock import MagicMock, patch
+from string import Template
+from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
@@ -20,14 +21,36 @@ def summarization_model(mock_llm_client):
 
 
 class TestSummarizationModel:
-    def test_build_prompt(self, summarization_model):
-        """Test that _build_prompt creates the correct prompt string."""
-        text = "This is a test content."
-        prompt = summarization_model._build_prompt(text)
-        assert "以下のテキストを日本語で要約してください。" in prompt
-        assert f"テキスト:\n{text}" in prompt
-        assert "タイトル:" in prompt
-        assert "要点:" in prompt
+    def test_load_summarization_prompt_template_success(self, summarization_model):
+        """Test that the summarization prompt template is loaded correctly."""
+        mock_template_content = "Template: $content"
+        target_path = "src/static/prompts/summarization_prompt.md"
+
+        with patch(
+            "builtins.open", mock_open(read_data=mock_template_content)
+        ) as mock_file:
+            with patch(
+                "src.models.summarization_model.os.path.join", return_value=target_path
+            ):
+                template = summarization_model._load_summarization_prompt_template()
+
+                mock_file.assert_called_once_with(target_path, "r", encoding="utf-8")
+                assert isinstance(template, Template)
+                assert template.template == mock_template_content
+
+    def test_load_summarization_prompt_template_file_not_found(
+        self, summarization_model
+    ):
+        """Test that FileNotFoundError is raised when the template file is not found."""
+        target_path = "src/static/prompts/summarization_prompt.md"
+
+        with patch("builtins.open", side_effect=FileNotFoundError) as mock_file:
+            with patch(
+                "src.models.summarization_model.os.path.join", return_value=target_path
+            ):
+                with pytest.raises(FileNotFoundError):
+                    summarization_model._load_summarization_prompt_template()
+                mock_file.assert_called_once_with(target_path, "r", encoding="utf-8")
 
     @pytest.mark.asyncio
     async def test_stream_summary_success(self, summarization_model, mock_llm_client):

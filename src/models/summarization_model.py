@@ -1,5 +1,7 @@
 import logging
+import os
 import re
+from string import Template
 
 from src.protocols.clients.ollama_client_protocol import OllamaClientProtocol
 from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
@@ -24,6 +26,26 @@ class SummarizationModel(SummarizationModelProtocol):
         self.thinking = ""
         self.is_summarizing = False
         self.last_error = None
+        self._summarization_prompt_template = self._load_summarization_prompt_template()
+
+    def _load_summarization_prompt_template(self) -> Template:
+        """
+        Load the summarization prompt template from the static file.
+
+        Returns:
+            Template: The prompt template object
+
+        Raises:
+            FileNotFoundError: If the prompt template file is not found
+        """
+        prompt_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "static",
+            "prompts",
+            "summarization_prompt.md",
+        )
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            return Template(f.read())
 
     def extract_think_content(self, text: str) -> tuple[str, str]:
         """
@@ -81,7 +103,9 @@ class SummarizationModel(SummarizationModelProtocol):
         self.last_error = None
 
         truncated_content = scraped_content[:10000]
-        prompt = self._build_prompt(truncated_content)
+        prompt = self._summarization_prompt_template.safe_substitute(
+            content=truncated_content
+        )
 
         stream_parts = []
         final_response = ""
@@ -119,15 +143,3 @@ class SummarizationModel(SummarizationModelProtocol):
         self.thinking = ""
         self.is_summarizing = False
         self.last_error = None
-
-    def _build_prompt(self, text: str) -> str:
-        """Constructs the prompt for the summarization task."""
-        return f"""以下のテキストを日本語で要約してください。
-
-テキスト:
-{text}
-
-要約は以下の形式で出力してください。
-タイトル: 記事の内容を一行で表すタイトルを1つ生成してください。
-要点: 記事の最も重要なポイントを3つを目安として、最大5つまでの箇条書きで簡潔にまとめてください。各箇条書きは100字以内にしてください。
-"""

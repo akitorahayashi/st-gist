@@ -1,4 +1,6 @@
+import os
 import re
+from string import Template
 from typing import Any, AsyncGenerator
 
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
@@ -10,6 +12,26 @@ class ConversationModel(ConversationModelProtocol):
         self.messages = []
         self.is_responding = False
         self.last_error = None
+        self._qa_prompt_template = self._load_qa_prompt_template()
+
+    def _load_qa_prompt_template(self) -> Template:
+        """
+        Load the Web Page Q&A prompt template from the static file.
+
+        Returns:
+            Template: The prompt template object
+
+        Raises:
+            FileNotFoundError: If the prompt template file is not found
+        """
+        prompt_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "static",
+            "prompts",
+            "web_page_qa_prompt.md",
+        )
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            return Template(f.read())
 
     async def generate_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """
@@ -32,19 +54,30 @@ class ConversationModel(ConversationModelProtocol):
         """
         return await self.client.generate_once(user_message)
 
-    async def respond_to_user_message(self, user_message: str) -> str:
+    async def respond_to_user_message(
+        self, user_message: str, summary: str = "", scraped_content: str = ""
+    ) -> str:
         """
-        Generate a response to user message with automatic state management.
+        Generate a response to user message with automatic state management using Web Page Q&A format.
 
         Args:
             user_message: The user's message to respond to
+            summary: The summarization of the web page
+            scraped_content: The scraped content from the web page
 
         Returns:
             str: The AI's response
         """
         self.is_responding = True
         try:
-            response = await self.generate_response_once(user_message)
+            # Build the Web Page Q&A prompt using the loaded template
+            qa_prompt = self._qa_prompt_template.safe_substitute(
+                summary=summary,
+                user_message=user_message,
+                scraped_content=scraped_content,
+            )
+
+            response = await self.generate_response_once(qa_prompt)
             return response
         finally:
             self.is_responding = False
