@@ -49,12 +49,12 @@ class TestSummarizationModel:
         ):
             results.append((thinking, summary))
 
-        # Check intermediate yields based on the new extract_think_content logic
-        # 1st yield: "<think>Thinking " - No closing tag, so it's all summary
-        assert results[0] == ("", "<think>Thinking")
-        # 2nd yield: "<think>Thinking about it.</think>" - Complete tag
+        # Check intermediate yields based on the updated extract_think_content logic
+        # 1st yield: "<think>Thinking " - Incomplete tag, extract "Thinking " as thinking content
+        assert results[0] == ("Thinking", "")
+        # 2nd yield: "<think>Thinking about it.</think>" - Complete tag, extract "Thinking about it." as thinking
         assert results[1] == ("Thinking about it.", "")
-        # 3rd yield: "<think>Thinking about it.</think>This is the summary."
+        # 3rd yield: "<think>Thinking about it.</think>This is the summary." - Complete tag + summary
         assert results[2] == ("Thinking about it.", "This is the summary.")
         # Final yield from the completed stream
         assert results[3] == ("Thinking about it.", "This is the summary.")

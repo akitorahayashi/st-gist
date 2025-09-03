@@ -1,4 +1,3 @@
-import asyncio
 import html
 
 import streamlit as st
@@ -70,30 +69,51 @@ def render_query_page():
             thinking_placeholder = st.empty()
             summary_placeholder = st.empty()
 
-            # Use the new streaming method that yields content
-            async def handle_streaming():
-                async for (
-                    thinking_content,
-                    summary_content,
-                ) in summarization_model.stream_summary(scraped_content):
-                    # Update placeholders with streamed content
-                    if thinking_content.strip():
-                        with thinking_placeholder.container():
-                            st.markdown("### 🤔 AI の思考過程")
-                            with st.expander("思考プロセス", expanded=True):
-                                st.markdown(thinking_content)
+            # Convert async streaming to synchronous chunk-by-chunk processing
+            import asyncio
 
-                    if summary_content.strip():
-                        with summary_placeholder.container():
-                            st.markdown("### 📝 要約コンテンツ")
-                            _, clean_summary_content = (
-                                conversation_model.extract_think_content(
-                                    summary_content
+            # Create new event loop for synchronous processing
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            try:
+                # Get async generator
+                async_gen = summarization_model.stream_summary(scraped_content)
+
+                # Process each chunk synchronously
+                while True:
+                    try:
+                        thinking_content, summary_content = loop.run_until_complete(
+                            anext(async_gen)
+                        )
+
+                        # Update placeholders with streamed content
+                        if thinking_content.strip():
+                            with thinking_placeholder.container():
+                                st.markdown("### 🤔 AI の思考過程")
+                                with st.expander("思考プロセス", expanded=True):
+                                    st.markdown(thinking_content)
+
+                        if summary_content.strip():
+                            with summary_placeholder.container():
+                                st.markdown("### 📝 要約コンテンツ")
+                                _, clean_summary_content = (
+                                    conversation_model.extract_think_content(
+                                        summary_content
+                                    )
                                 )
-                            )
-                            st.markdown(clean_summary_content)
+                                st.markdown(clean_summary_content)
 
-            asyncio.run(handle_streaming())
+                        # Small delay to allow UI updates
+                        import time
+
+                        time.sleep(0.01)
+
+                    except StopAsyncIteration:
+                        break
+
+            finally:
+                loop.close()
         except Exception as e:
             summarization_model.last_error = (
                 f"要約の生成中にエラーが発生しました: {str(e)}"

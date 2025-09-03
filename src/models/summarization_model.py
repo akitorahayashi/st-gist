@@ -28,6 +28,7 @@ class SummarizationModel(SummarizationModelProtocol):
     def extract_think_content(self, text: str) -> tuple[str, str]:
         """
         Extract think content from text and return (thinking_content, remaining_text).
+        Handles both complete and incomplete <think> tags during streaming.
 
         Args:
             text: Input text that may contain <think> tags
@@ -35,15 +36,34 @@ class SummarizationModel(SummarizationModelProtocol):
         Returns:
             tuple of (thinking_content, text_without_think_tags)
         """
-        # Pattern to match think tags and their content
-        think_pattern = r"<think>(.*?)</think>"
+        # Pattern to match complete think tags
+        complete_think_pattern = r"<think>(.*?)</think>"
 
-        # Find all think content
-        think_matches = re.findall(think_pattern, text, re.DOTALL)
-        thinking_content = "\n".join(think_matches).strip()
+        # Find all complete think content
+        complete_matches = re.findall(complete_think_pattern, text, re.DOTALL)
+        thinking_content = "\n".join(complete_matches).strip()
 
-        # Remove think tags from the original text
-        cleaned_text = re.sub(think_pattern, "", text, flags=re.DOTALL).strip()
+        # Check for incomplete <think> tag (started but not closed)
+        incomplete_think_match = re.search(
+            r"<think>((?:(?!</think>).)*?)$", text, re.DOTALL
+        )
+        if incomplete_think_match:
+            incomplete_content = incomplete_think_match.group(1).strip()
+            if incomplete_content:
+                if thinking_content:
+                    thinking_content += "\n" + incomplete_content
+                else:
+                    thinking_content = incomplete_content
+
+        # Remove complete think tags from the original text
+        cleaned_text = re.sub(complete_think_pattern, "", text, flags=re.DOTALL)
+
+        # Remove incomplete think tag (from <think> to end of text)
+        cleaned_text = re.sub(
+            r"<think>(?:(?!</think>).)*?$", "", cleaned_text, flags=re.DOTALL
+        )
+
+        cleaned_text = cleaned_text.strip()
 
         return thinking_content, cleaned_text
 
