@@ -1,4 +1,5 @@
-from unittest.mock import AsyncMock, MagicMock
+from string import Template
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 
@@ -97,10 +98,51 @@ class TestConversationModel:
     @pytest.mark.asyncio
     async def test_respond_to_user_message(self, conversation_model, mock_client):
         """Test the respond_to_user_message method."""
-        response = await conversation_model.respond_to_user_message("User question")
-        mock_client.generate_once.assert_called_once_with("User question")
+        user_question = "User question"
+        # Build the expected prompt using the model's template
+        template_content = conversation_model._qa_prompt_template.template
+        expected_prompt = Template(template_content).safe_substitute(
+            summary="", user_message=user_question, scraped_content=""
+        )
+
+        response = await conversation_model.respond_to_user_message(user_question)
+
+        # Verify that the generate_once method was called with the correct prompt
+        mock_client.generate_once.assert_called_once_with(expected_prompt)
         assert response == "AI response"
         assert not conversation_model.is_responding
+
+    # --- _load_qa_prompt_template tests ---
+    def test_load_qa_prompt_template_success(self, conversation_model):
+        """Test that the QA prompt template is loaded correctly."""
+        mock_template_content = "Template: $user_message"
+        # The actual path being opened by the model implementation
+        target_path = "src/static/prompts/web_page_qa_prompt.md"
+
+        with patch(
+            "builtins.open", mock_open(read_data=mock_template_content)
+        ) as mock_file:
+            # We patch the path within the model's __init__ to avoid complex path logic
+            with patch(
+                "src.models.conversation_model.os.path.join", return_value=target_path
+            ):
+                template = conversation_model._load_qa_prompt_template()
+
+                mock_file.assert_called_once_with(target_path, "r", encoding="utf-8")
+                assert isinstance(template, Template)
+                assert template.template == mock_template_content
+
+    def test_load_qa_prompt_template_file_not_found(self, conversation_model):
+        """Test that FileNotFoundError is raised when the template file is not found."""
+        target_path = "src/static/prompts/web_page_qa_prompt.md"
+
+        with patch("builtins.open", side_effect=FileNotFoundError) as mock_file:
+            with patch(
+                "src.models.conversation_model.os.path.join", return_value=target_path
+            ):
+                with pytest.raises(FileNotFoundError):
+                    conversation_model._load_qa_prompt_template()
+                mock_file.assert_called_once_with(target_path, "r", encoding="utf-8")
 
     # --- limit_messages test ---
     def test_limit_messages(self, conversation_model):
