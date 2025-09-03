@@ -8,16 +8,6 @@ This application is a web page summarization tool. By entering a URL, an AI anal
 2.  Click the "要約を開始" (Start Summarization) button to begin the analysis.
 3.  Once the summary is displayed, you can ask questions about the page's content in the chat interface that appears.
 
-## Tech Stack
-
--   Python 3.12.11
--   Streamlit
--   Beautiful Soup 4
--   Poetry
--   Pytest
--   Ruff
--   Black
-
 ## Setup and Execution
 
 1.  **Initial Setup**
