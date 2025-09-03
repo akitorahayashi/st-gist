@@ -33,7 +33,7 @@ help: ## Display this help message
 .PHONY: setup
 setup: ## Project initial setup: install dependencies and create .env file
 	@echo "🐍 Installing python dependencies with uv..."
-	@uv sync --extra dev
+	@uv sync
 	@echo "📄 Creating environment file..."
 	@if [ ! -f .env ]; then \
 		echo "Creating .env from .env.example..." ; \
@@ -88,22 +88,22 @@ lint: ## Perform static code analysis (check) using Black and Ruff
 # ==============================================================================
 
 .PHONY: test
-test: unit-test build-test e2e-test intg-test ## Run the full test suite
+test: unit-test intg-test build-test e2e-test ## Run the full test suite
 
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
-	@$(PYTHON) -m pytest tests/unit-test -v
-
-.PHONY: intg-test
-intg-test: ## Run integration tests with mocks (no external dependencies)
-	@echo "Running integration tests with mocks..."
-	@$(PYTHON) -m pytest tests/intg -v
+	@$(PYTHON) -m pytest tests/unit -v -s
 
 .PHONY: build-test
 build-test: ## Run build tests
 	@echo "Running build tests..."
 	@$(PYTHON) -m pytest tests/build -s
+
+.PHONY: intg-test
+intg-test: ## Run integration tests
+	@echo "Running integration tests..."
+	@PYTHONPATH=. $(PYTHON) -m pytest tests/intg -v -s
 
 .PHONY: e2e-test
 e2e-test: ## Run end-to-end tests

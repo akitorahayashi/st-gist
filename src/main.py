@@ -1,49 +1,73 @@
 import os
 
 import streamlit as st
+from dotenv import load_dotenv
 
 from src.clients.ollama_client import OllamaApiClient
-from src.components.header import render_header
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
-from src.services.conversation_service import ConversationService
-from src.state import AppState
+from src.models import ConversationModel, ScrapingModel, SummarizationModel
+from src.router import AppRouter, Page
+
+# Load environment variables
+load_dotenv()
 
 
 def main():
+    st.set_page_config(page_title="Gist", page_icon="📝", layout="centered")
+
     initialize_session()
-    app_state = st.session_state.app_state
 
-    # Complete component switching - only one renders at a time
-    if app_state.show_chat:
-        st.set_page_config(layout="centered")
+    # Route based on page state using AppRouter and Page Enum
+    if st.session_state.app_router.current_page == Page.CHAT:
         render_query_page()
-    else:
-        st.set_page_config(layout="centered")
+    else:  # default to Page.INPUT
         render_url_input_page()
-
-    if not app_state.show_chat:
-        render_header()
 
 
 def initialize_session():
-    if "app_state" not in st.session_state:
-        st.session_state.app_state = AppState()
+    # Initialize AppRouter
+    if "app_router" not in st.session_state:
+        st.session_state.app_router = AppRouter()
 
     # Client should be initialized regardless of the page
     if "ollama_client" not in st.session_state:
         is_debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
         if is_debug:
-            from dev.mocks.mock_ollama_client import MockOllamaApiClient
+            from dev.mocks.clients.mock_ollama_client import MockOllamaApiClient
 
             st.session_state.ollama_client = MockOllamaApiClient()
         else:
-            st.session_state.ollama_client = OllamaApiClient()
+            ollama_api_endpoint = os.getenv("OLLAMA_API_ENDPOINT")
+            if not ollama_api_endpoint:
+                # Fallback to Streamlit secrets if available
+                try:
+                    ollama_api_endpoint = st.secrets.get("OLLAMA_API_ENDPOINT")
+                except Exception:
+                    pass
 
-    # Initialize conversation service only when needed (on chat page)
-    if "conversation_service" not in st.session_state:
+            if not ollama_api_endpoint:
+                raise ValueError(
+                    "OLLAMA_API_ENDPOINT is not configured in environment variables or Streamlit secrets."
+                )
+
+            st.session_state.ollama_client = OllamaApiClient(ollama_api_endpoint)
+
+    # Initialize conversation model
+    if "conversation_model" not in st.session_state:
         if "ollama_client" in st.session_state:
-            st.session_state.conversation_service = ConversationService(
+            st.session_state.conversation_model = ConversationModel(
+                st.session_state.ollama_client
+            )
+
+    # Initialize scraping model
+    if "scraping_model" not in st.session_state:
+        st.session_state.scraping_model = ScrapingModel()
+
+    # Initialize summarization model
+    if "summarization_model" not in st.session_state:
+        if "ollama_client" in st.session_state:
+            st.session_state.summarization_model = SummarizationModel(
                 st.session_state.ollama_client
             )
 

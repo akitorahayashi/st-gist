@@ -1,0 +1,80 @@
+[data-testid="stSidebar"] {
+    display: none;
+}
+
+/* Override Streamlit's default layout */
+.main .block-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* Fallback for older browsers */
+    min-height: 100vh;
+    /* Modern viewport units for better mobile handling */
+    min-height: 100svh;
+    min-height: 100dvh;
+    /* Allow scrolling if content overflows */
+    height: auto;
+    overflow: auto;
+    padding: 0;
+    padding-bottom: 4rem !important;
+    margin: 0 auto;
+    max-width: 600px;
+}
+
+/* Responsive input styling */
+.stTextInput > div > div > input {
+    text-align: center;
+    font-size: 1.1rem;
+    padding: 0.8rem;
+}
+
+/* Black button styling */
+.stButton > button {
+    width: 100%;
+    background-color: #000000 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.8rem 2rem !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton > button:hover {
+    background-color: #333333 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.stButton > button:focus {
+    background-color: #000000 !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 0 0 2px #666666 !important;
+}
+
+/* Processing button state */
+.stButton > button:disabled {
+    background-color: #333333 !important;
+    color: white !important;
+    cursor: not-allowed !important;
+    opacity: 0.8 !important;
+}
+
+/* Ensure disabled state overrides other styles */
+.stButton > button[disabled] {
+    background-color: #333333 !important;
+    color: white !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main .block-container {
+        max-width: 90%;
+    }
+    .centered-content {
+        padding: 1rem;
+    }
+}

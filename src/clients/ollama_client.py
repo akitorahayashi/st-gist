@@ -4,29 +4,21 @@ import os
 from typing import AsyncGenerator
 
 import httpx
-import streamlit as st
+
+from src.protocols.clients.ollama_client_protocol import OllamaClientProtocol
 
 logger = logging.getLogger(__name__)
 
 
-class OllamaApiClient:
+class OllamaApiClient(OllamaClientProtocol):
     """
     A client for interacting with the Ollama API.
     """
 
-    def __init__(self):
-        self.api_url = os.getenv("OLLAMA_API_ENDPOINT")
+    def __init__(self, api_url: str):
+        self.api_url = api_url
         if not self.api_url:
-            # Fallback to Streamlit secrets if available
-            try:
-                self.api_url = st.secrets.get("OLLAMA_API_ENDPOINT")
-            except Exception:
-                pass
-
-        if not self.api_url:
-            raise ValueError(
-                "OLLAMA_API_ENDPOINT is not configured in environment variables or Streamlit secrets."
-            )
+            raise ValueError("OLLAMA_API_ENDPOINT is required.")
         self.generate_endpoint = f"{self.api_url}/api/v1/generate"
 
     async def _stream_response(
