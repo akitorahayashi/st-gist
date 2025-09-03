@@ -1,4 +1,3 @@
-import asyncio
 
 from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
 

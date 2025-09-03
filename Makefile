@@ -33,7 +33,7 @@ help: ## Display this help message
 .PHONY: setup
 setup: ## Project initial setup: install dependencies and create .env file
 	@echo "🐍 Installing python dependencies with uv..."
-	@uv sync --extra dev
+	@uv sync
 	@echo "📄 Creating environment file..."
 	@if [ ! -f .env ]; then \
 		echo "Creating .env from .env.example..." ; \
