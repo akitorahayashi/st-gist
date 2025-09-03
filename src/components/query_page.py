@@ -1,5 +1,5 @@
-import html
 import asyncio
+import html
 
 import streamlit as st
 
@@ -155,7 +155,7 @@ def render_query_page():
                 conversation_model.respond_to_user_message(
                     conversation_model.messages[-1]["content"],
                     summary=page_summary,
-                    scraped_content=scraped_content
+                    scraped_content=scraped_content,
                 )
             )
             _, clean_response = conversation_model.extract_think_content(response)

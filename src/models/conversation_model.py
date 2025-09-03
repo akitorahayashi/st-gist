@@ -1,4 +1,6 @@
+import os
 import re
+from string import Template
 from typing import Any, AsyncGenerator
 
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
@@ -10,6 +12,26 @@ class ConversationModel(ConversationModelProtocol):
         self.messages = []
         self.is_responding = False
         self.last_error = None
+        self._qa_prompt_template = self._load_qa_prompt_template()
+
+    def _load_qa_prompt_template(self) -> Template:
+        """
+        Load the Web Page Q&A prompt template from the static file.
+
+        Returns:
+            Template: The prompt template object
+
+        Raises:
+            FileNotFoundError: If the prompt template file is not found
+        """
+        prompt_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "static",
+            "prompts",
+            "web_page_qa_prompt.md",
+        )
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            return Template(f.read())
 
     async def generate_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """
@@ -32,7 +54,9 @@ class ConversationModel(ConversationModelProtocol):
         """
         return await self.client.generate_once(user_message)
 
-    async def respond_to_user_message(self, user_message: str, summary: str = "", scraped_content: str = "") -> str:
+    async def respond_to_user_message(
+        self, user_message: str, summary: str = "", scraped_content: str = ""
+    ) -> str:
         """
         Generate a response to user message with automatic state management using Web Page Q&A format.
 
@@ -46,50 +70,12 @@ class ConversationModel(ConversationModelProtocol):
         """
         self.is_responding = True
         try:
-            # Build the Web Page Q&A prompt
-            qa_prompt = f"""# AI Prompt
-
-## Role
-
-You are a "Web Page Q&A Bot".
-
-## Context
-
-You will be given the text content of a web page and a user's question. Your task is to answer the question based strictly on the provided text.
-
-## Instructions
-
-1. Analyze the user's question.
-
-2. Carefully scan the provided "Web Page Text" to find the relevant information to answer the question.
-
-3. Formulate a concise and accurate answer based *only* on the information found in the text.
-
-## Constraints
-
-- **DO NOT** use any external knowledge or information outside of the provided "Web Page Text".
-
-- **MUST** respond in the same language as the user's question.
-
-- If the answer cannot be found within the text, you **MUST** respond with: "I could not find the answer to your question in the provided text." (in the same language as the user's question)
-
-- Do not invent, assume, or infer any information that is not explicitly stated in the text.
-
----
-
-## [Input Placeholders]
-
-### Your Summarization:
-
-{summary}
-
-### User Question:
-
-{user_message}
-
-### Web Page Text:
-
-{scraped_content}"""
+            # Build the Web Page Q&A prompt using the loaded template
+            qa_prompt = self._qa_prompt_template.safe_substitute(
+                summary=summary,
+                user_message=user_message,
+                scraped_content=scraped_content,
+            )
 
             response = await self.generate_response_once(qa_prompt)
             return response
