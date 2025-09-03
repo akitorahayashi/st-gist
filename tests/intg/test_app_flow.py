@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src import main
-from src.routing import Page
+from src.router import Page
 
 
 class MockStreamlitSessionState(dict):

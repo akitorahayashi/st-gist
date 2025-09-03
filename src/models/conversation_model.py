@@ -15,8 +15,16 @@ class ConversationModel(ConversationModelProtocol):
         """
         Generates a response from the client as an asynchronous stream.
         """
-        async for chunk in self.client.generate(user_message):
-            yield chunk
+        self.is_responding = True
+        self.last_error = None
+        try:
+            async for chunk in self.client.generate(user_message):
+                yield chunk
+        except Exception as e:
+            self.last_error = str(e)
+            raise
+        finally:
+            self.is_responding = False
 
     async def generate_response_once(self, user_message: str) -> str:
         """

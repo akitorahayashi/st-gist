@@ -33,10 +33,13 @@ class AppRouter:
 
     def go_to_input_page(self):
         """Navigate to input page and reset model states."""
-        st.session_state.page = Page.INPUT
+        # Preserving essential keys like 'app_router' and 'page'
+        preserved_keys = {"app_router", "page"}
+        for key in list(st.session_state.keys()):
+            if key not in preserved_keys:
+                del st.session_state[key]
 
-        # Reset all model states
-        st.session_state.clear()
+        st.session_state.page = Page.INPUT
 
     def go_to_chat_page(self):
         """Navigate to chat page."""

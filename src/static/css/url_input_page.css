@@ -8,9 +8,14 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    /* Fallback for older browsers */
     min-height: 100vh;
-    height: 100vh;
-    overflow: hidden;
+    /* Modern viewport units for better mobile handling */
+    min-height: 100svh;
+    min-height: 100dvh;
+    /* Allow scrolling if content overflows */
+    height: auto;
+    overflow: auto;
     padding: 0;
     padding-bottom: 4rem !important;
     margin: 0 auto;
