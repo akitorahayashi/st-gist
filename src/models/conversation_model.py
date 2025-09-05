@@ -57,7 +57,10 @@ class ConversationModel(ConversationModelProtocol):
         return await self.client.gen_batch(user_message)
 
     async def respond_to_user_message(
-        self, user_message: str, summary: str = "", scraped_content: str = ""
+        self,
+        user_message: str,
+        summary: str = "",
+        scraped_content: str = "",
     ) -> str:
         """
         Generate a response to user message with automatic state management using Web Page Q&A format.
@@ -81,6 +84,9 @@ class ConversationModel(ConversationModelProtocol):
 
             response = await self.client.gen_batch(qa_prompt)
             return response
+        except Exception:
+            self.last_error = "応答の生成に失敗しました。"
+            raise
         finally:
             self.is_responding = False
 
