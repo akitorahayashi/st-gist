@@ -64,7 +64,7 @@ class TestSummarizationModel:
             yield "This is the summary."
 
         # The mock's return value should be the async generator itself
-        mock_llm_client.generate.return_value = stream_generator()
+        mock_llm_client.gen_stream.return_value = stream_generator()
 
         results = []
         async for thinking, summary in summarization_model.stream_summary(
@@ -96,7 +96,7 @@ class TestSummarizationModel:
             yield "this is fine"
             raise Exception("LLM Error")
 
-        mock_llm_client.generate.return_value = error_generator()
+        mock_llm_client.gen_stream.return_value = error_generator()
 
         with patch("streamlit.session_state", MagicMock()):
             with pytest.raises(

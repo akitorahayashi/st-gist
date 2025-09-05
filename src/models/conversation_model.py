@@ -1,13 +1,14 @@
 import os
 import re
 from string import Template
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
+from sdk.olm_api_client import OllamaClientProtocol
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
 
 
 class ConversationModel(ConversationModelProtocol):
-    def __init__(self, client: Any):
+    def __init__(self, client: OllamaClientProtocol):
         self.client = client
         self.messages = []
         self.is_responding = False
@@ -33,26 +34,6 @@ class ConversationModel(ConversationModelProtocol):
         with open(prompt_path, "r", encoding="utf-8") as f:
             return Template(f.read())
 
-    async def generate_response(self, user_message: str) -> AsyncGenerator[str, None]:
-        """
-        Generates a response from the client as an asynchronous stream.
-        """
-        self.is_responding = True
-        self.last_error = None
-        try:
-            async for chunk in self.client.generate(user_message):
-                yield chunk
-        except Exception as e:
-            self.last_error = str(e)
-            raise
-        finally:
-            self.is_responding = False
-
-    async def generate_response_once(self, user_message: str) -> str:
-        """
-        Generates a complete response from the client at once.
-        """
-        return await self.client.generate_once(user_message)
 
     async def respond_to_user_message(
         self, user_message: str, summary: str = "", scraped_content: str = ""
@@ -77,7 +58,7 @@ class ConversationModel(ConversationModelProtocol):
                 scraped_content=scraped_content,
             )
 
-            response = await self.generate_response_once(qa_prompt)
+            response = await self.client.gen_batch(qa_prompt)
             return response
         finally:
             self.is_responding = False

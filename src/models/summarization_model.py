@@ -3,7 +3,7 @@ import os
 import re
 from string import Template
 
-from src.protocols.clients.ollama_client_protocol import OllamaClientProtocol
+from sdk.olm_api_client import OllamaClientProtocol
 from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
 
 logger = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ class SummarizationModel(SummarizationModelProtocol):
         final_response = ""
 
         try:
-            async for chunk in self.llm_client.generate(prompt):
+            async for chunk in self.llm_client.gen_stream(prompt):
                 stream_parts.append(chunk)
                 current_response = "".join(stream_parts)
                 thinking_content, summary_content = self.extract_think_content(

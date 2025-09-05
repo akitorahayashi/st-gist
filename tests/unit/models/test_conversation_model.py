@@ -11,7 +11,7 @@ def mock_client():
     """Fixture for a mocked client."""
     client = MagicMock()
     # Mock the async method
-    client.generate_once = AsyncMock(return_value="AI response")
+    client.gen_batch = AsyncMock(return_value="AI response")
     return client
 
 
@@ -107,8 +107,8 @@ class TestConversationModel:
 
         response = await conversation_model.respond_to_user_message(user_question)
 
-        # Verify that the generate_once method was called with the correct prompt
-        mock_client.generate_once.assert_called_once_with(expected_prompt)
+        # Verify that the gen_batch method was called with the correct prompt
+        mock_client.gen_batch.assert_called_once_with(expected_prompt)
         assert response == "AI response"
         assert not conversation_model.is_responding
 

@@ -6,29 +6,6 @@ class ConversationModelProtocol(Protocol):
     Protocol for conversation models.
     """
 
-    async def generate_response(self, user_message: str) -> AsyncGenerator[str, None]:
-        """
-        Generates a response from the client as an asynchronous stream.
-
-        Args:
-            user_message: The user's message to respond to
-
-        Yields:
-            str: Response chunks
-        """
-        ...
-
-    async def generate_response_once(self, user_message: str) -> str:
-        """
-        Generates a complete response from the client at once.
-
-        Args:
-            user_message: The user's message to respond to
-
-        Returns:
-            str: The complete response
-        """
-        ...
 
     async def respond_to_user_message(self, user_message: str) -> str:
         """
