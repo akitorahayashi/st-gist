@@ -1,13 +1,15 @@
 import os
 import re
 from string import Template
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
+
+from sdk.olm_api_client import OllamaClientProtocol
 
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
 
 
 class ConversationModel(ConversationModelProtocol):
-    def __init__(self, client: Any):
+    def __init__(self, client: OllamaClientProtocol):
         self.client = client
         self.messages = []
         self.is_responding = False
@@ -40,7 +42,7 @@ class ConversationModel(ConversationModelProtocol):
         self.is_responding = True
         self.last_error = None
         try:
-            async for chunk in self.client.generate(user_message):
+            async for chunk in self.client.gen_stream(user_message):
                 yield chunk
         except Exception as e:
             self.last_error = str(e)
@@ -52,10 +54,13 @@ class ConversationModel(ConversationModelProtocol):
         """
         Generates a complete response from the client at once.
         """
-        return await self.client.generate_once(user_message)
+        return await self.client.gen_batch(user_message)
 
     async def respond_to_user_message(
-        self, user_message: str, summary: str = "", scraped_content: str = ""
+        self,
+        user_message: str,
+        summary: str = "",
+        scraped_content: str = "",
     ) -> str:
         """
         Generate a response to user message with automatic state management using Web Page Q&A format.
@@ -77,8 +82,11 @@ class ConversationModel(ConversationModelProtocol):
                 scraped_content=scraped_content,
             )
 
-            response = await self.generate_response_once(qa_prompt)
+            response = await self.client.gen_batch(qa_prompt)
             return response
+        except Exception:
+            self.last_error = "応答の生成に失敗しました。"
+            raise
         finally:
             self.is_responding = False
 

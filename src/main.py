@@ -2,8 +2,8 @@ import os
 
 import streamlit as st
 from dotenv import load_dotenv
+from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient
 
-from src.clients.ollama_client import OllamaApiClient
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
 from src.models import ConversationModel, ScrapingModel, SummarizationModel
@@ -34,24 +34,24 @@ def initialize_session():
     if "ollama_client" not in st.session_state:
         is_debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
         if is_debug:
-            from dev.mocks.clients.mock_ollama_client import MockOllamaApiClient
-
-            st.session_state.ollama_client = MockOllamaApiClient()
+            st.session_state.ollama_client = MockOllamaApiClient(token_delay=0.01)
         else:
-            ollama_api_endpoint = os.getenv("OLLAMA_API_ENDPOINT")
+            ollama_api_endpoint = os.getenv("OLM_API_ENDPOINT")
             if not ollama_api_endpoint:
                 # Fallback to Streamlit secrets if available
                 try:
-                    ollama_api_endpoint = st.secrets.get("OLLAMA_API_ENDPOINT")
+                    ollama_api_endpoint = st.secrets.get("OLM_API_ENDPOINT")
                 except Exception:
                     pass
 
             if not ollama_api_endpoint:
                 raise ValueError(
-                    "OLLAMA_API_ENDPOINT is not configured in environment variables or Streamlit secrets."
+                    "OLM_API_ENDPOINT is not configured in environment variables or Streamlit secrets."
                 )
 
-            st.session_state.ollama_client = OllamaApiClient(ollama_api_endpoint)
+            st.session_state.ollama_client = OllamaApiClient(
+                api_url=ollama_api_endpoint
+            )
 
     # Initialize conversation model
     if "conversation_model" not in st.session_state:

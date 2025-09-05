@@ -13,8 +13,8 @@ class ConversationModelProtocol(Protocol):
         Args:
             user_message: The user's message to respond to
 
-        Yields:
-            str: Response chunks
+        Returns:
+            AsyncGenerator[str, None]: Stream of response chunks
         """
         ...
 
