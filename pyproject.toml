@@ -8,7 +8,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "olm-api @ git+https://github.com/akitorahayashi/olm-api.git",
+    "olm-api @ git+https://github.com/akitorahayashi/olm-api.git@v1.0.0",
     "streamlit>=1.49.1",
     "pandas>=2.0.0",
     "numpy>=1.26.0,<2.0",
