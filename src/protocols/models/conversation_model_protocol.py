@@ -1,11 +1,10 @@
-from typing import AsyncGenerator, Protocol
+from typing import Protocol
 
 
 class ConversationModelProtocol(Protocol):
     """
     Protocol for conversation models.
     """
-
 
     async def respond_to_user_message(self, user_message: str) -> str:
         """

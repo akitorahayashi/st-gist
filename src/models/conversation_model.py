@@ -1,9 +1,9 @@
 import os
 import re
 from string import Template
-from typing import AsyncGenerator
 
 from sdk.olm_api_client import OllamaClientProtocol
+
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
 
 
@@ -33,7 +33,6 @@ class ConversationModel(ConversationModelProtocol):
         )
         with open(prompt_path, "r", encoding="utf-8") as f:
             return Template(f.read())
-
 
     async def respond_to_user_message(
         self, user_message: str, summary: str = "", scraped_content: str = ""

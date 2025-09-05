@@ -2,8 +2,8 @@ import os
 
 import streamlit as st
 from dotenv import load_dotenv
+from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient
 
-from sdk.olm_api_client import OllamaApiClient, MockOllamaApiClient
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
 from src.models import ConversationModel, ScrapingModel, SummarizationModel
@@ -49,7 +49,9 @@ def initialize_session():
                     "OLM_API_ENDPOINT is not configured in environment variables or Streamlit secrets."
                 )
 
-            st.session_state.ollama_client = OllamaApiClient(api_url=ollama_api_endpoint)
+            st.session_state.ollama_client = OllamaApiClient(
+                api_url=ollama_api_endpoint
+            )
 
     # Initialize conversation model
     if "conversation_model" not in st.session_state:

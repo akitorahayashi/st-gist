@@ -4,6 +4,7 @@ import re
 from string import Template
 
 from sdk.olm_api_client import OllamaClientProtocol
+
 from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
 
 logger = logging.getLogger(__name__)
