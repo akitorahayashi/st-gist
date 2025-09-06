@@ -14,6 +14,24 @@ from src.services.vector_store import VectorStore
 load_dotenv()
 
 
+@st.cache_resource
+def load_summarization_model(_client):
+    """SummarizationModelをキャッシュしてロードする"""
+    return SummarizationModel(_client)
+
+
+@st.cache_resource
+def load_conversation_model(_client):
+    """ConversationModelをキャッシュしてロードする"""
+    return ConversationModel(_client)
+
+
+@st.cache_resource
+def load_vector_store():
+    """VectorStoreをキャッシュしてロードする"""
+    return VectorStore()
+
+
 def main():
     st.set_page_config(page_title="Gist", page_icon="📝", layout="centered")
 
@@ -54,10 +72,17 @@ def initialize_session():
                 api_url=ollama_api_endpoint
             )
 
+    # Initialize summarization model
+    if "summarization_model" not in st.session_state:
+        if "ollama_client" in st.session_state:
+            st.session_state.summarization_model = load_summarization_model(
+                st.session_state.ollama_client
+            )
+
     # Initialize conversation model
     if "conversation_model" not in st.session_state:
         if "ollama_client" in st.session_state:
-            st.session_state.conversation_model = ConversationModel(
+            st.session_state.conversation_model = load_conversation_model(
                 st.session_state.ollama_client
             )
 
@@ -65,16 +90,9 @@ def initialize_session():
     if "scraping_model" not in st.session_state:
         st.session_state.scraping_model = ScrapingModel()
 
-    # Initialize summarization model
-    if "summarization_model" not in st.session_state:
-        if "ollama_client" in st.session_state:
-            st.session_state.summarization_model = SummarizationModel(
-                st.session_state.ollama_client
-            )
-
     # Initialize vector store
     if "vector_store" not in st.session_state:
-        st.session_state.vector_store = VectorStore()
+        st.session_state.vector_store = load_vector_store()
 
 
 if __name__ == "__main__":

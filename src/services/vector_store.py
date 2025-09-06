@@ -1,6 +1,5 @@
 import numpy as np
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -10,6 +9,8 @@ class VectorStore:
     """
 
     def __init__(self, model_name="all-MiniLM-L6-v2"):
+        from sentence_transformers import SentenceTransformer
+
         self.model = SentenceTransformer(model_name)
         self.texts = []
         self.embeddings = None
