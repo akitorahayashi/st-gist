@@ -1,5 +1,5 @@
-import streamlit as st
 import pyperclip
+import streamlit as st
 
 from src.router import Page
 
@@ -45,7 +45,9 @@ def render_sidebar(page: Page = None):
                 use_container_width=True,
                 key="rec_seal_btn",
             ):
-                pyperclip.copy("https://syncedreview.com/2025/06/16/mit-researchers-unveil-seal-a-new-step-towards-self-improving-ai/")
+                pyperclip.copy(
+                    "https://syncedreview.com/2025/06/16/mit-researchers-unveil-seal-a-new-step-towards-self-improving-ai/"
+                )
                 st.session_state.copied_article = "自己学習AI、SEAL"
                 st.rerun()
 
@@ -65,7 +67,9 @@ def render_sidebar(page: Page = None):
                 use_container_width=True,
                 key="token_infer_btn2",
             ):
-                pyperclip.copy("https://syncedreview.com/2025/08/14/which-agent-causes-task-failures-and-whenresearchers-from-psu-and-duke-explores-automated-failure-attribution-of-llm-multi-agent-systems/")
+                pyperclip.copy(
+                    "https://syncedreview.com/2025/08/14/which-agent-causes-task-failures-and-whenresearchers-from-psu-and-duke-explores-automated-failure-attribution-of-llm-multi-agent-systems/"
+                )
                 st.session_state.copied_article = "LLM自動故障帰因の研究"
                 st.rerun()
 
@@ -75,10 +79,12 @@ def render_sidebar(page: Page = None):
 
             # show info if an article was just copied
             if st.session_state.copied_article:
-                st.info(f"{st.session_state.copied_article}の記事のリンクをコピーしました")
+                st.info(
+                    f"{st.session_state.copied_article}の記事のリンクをコピーしました"
+                )
 
             st.markdown("### 📚 まとめサイト")
-            
+
             st.link_button(
                 "✨ Synced Review",
                 url="https://syncedreview.com/",
