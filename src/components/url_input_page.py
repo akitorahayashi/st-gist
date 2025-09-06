@@ -89,13 +89,7 @@ def render_url_input_form():
             except ValueError as e:
                 scraping_model.last_error = str(e)
 
-        # Hidden native button for actual functionality
-        st.button(
-            "要約を開始",
-            use_container_width=True,
-            on_click=on_summarize_click,
-            key="hidden_summarize_button",
-        )
+        st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)
 
         # メインループでのフラグ処理
         if st.session_state.get("should_start_scraping", False):
