@@ -158,19 +158,12 @@ def render_query_page():
             if vector_store:
                 searched_content = vector_store.search(user_query)
 
-            # Combine search results and full page content as context for LLM
-            combined_content = f"""## Retrieved from Vector Search:
-{searched_content}
-
-## Full Page Content:
-{page_content}
-"""
-
             response = asyncio.run(
                 conversation_model.respond_to_user_message(
                     user_query,
                     summary=page_summary,
-                    reference_text=combined_content,
+                    vector_search_content=searched_content,
+                    page_content=page_content,
                 )
             )
             _, clean_response = conversation_model.extract_think_content(response)

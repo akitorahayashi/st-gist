@@ -7,7 +7,7 @@ def render_url_input_page():
 
     st.title("Gist")
     st.write(
-        "By entering a URL, this tool will analyze and summarize the content of the page, allowing you to ask questions about it through a chatbot."
+        "URLを入力すると、そのページの内容を分析・要約し、チャットボットでの質問ができるようになります。各セッションは独立しており、ページを再読み込みしたり新しいURLを入力すると、前のデータはクリアされます。"
     )
 
     render_url_input_form()

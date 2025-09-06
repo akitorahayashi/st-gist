@@ -13,15 +13,15 @@ from src.router import AppRouter, Page
 load_dotenv()
 
 
-@st.cache_resource
+@st.cache_data
 def load_summarization_model(_client):
-    """SummarizationModelをキャッシュしてロードする"""
+    """SummarizationModelをセッション毎にキャッシュしてロードする"""
     return SummarizationModel(_client)
 
 
-@st.cache_resource
+@st.cache_data
 def load_conversation_model(_client):
-    """ConversationModelをキャッシュしてロードする"""
+    """ConversationModelをセッション毎にキャッシュしてロードする"""
     return ConversationModel(_client)
 
 
@@ -41,6 +41,12 @@ def initialize_session():
     # Initialize AppRouter
     if "app_router" not in st.session_state:
         st.session_state.app_router = AppRouter()
+    
+    # セッション初期化を確実にするため、アプリケーション開始時の状態確認
+    if "session_initialized" not in st.session_state:
+        st.session_state.session_initialized = True
+        # 既存のキャッシュされたデータをクリア
+        st.cache_data.clear()
 
     # Client should be initialized regardless of the page
     if "ollama_client" not in st.session_state:

@@ -29,6 +29,21 @@ class SummarizationModel(SummarizationModelProtocol):
         self.last_error = None
         self._summarization_prompt_template = self._load_summarization_prompt_template()
 
+    def _truncate_prompt(self, prompt: str, max_chars: int = 4000) -> str:
+        """
+        Truncate prompt from the end if it exceeds max_chars to preserve important context at the beginning.
+        
+        Args:
+            prompt: The prompt to potentially truncate
+            max_chars: Maximum number of characters allowed (default: 4000)
+            
+        Returns:
+            str: Truncated prompt if necessary
+        """
+        if len(prompt) <= max_chars:
+            return prompt
+        return prompt[:max_chars]
+
     def _load_summarization_prompt_template(self) -> Template:
         """
         Load the summarization prompt template from the static file.
@@ -107,13 +122,15 @@ class SummarizationModel(SummarizationModelProtocol):
         prompt = self._summarization_prompt_template.safe_substitute(
             content=truncated_content
         )
+        
+        truncated_prompt = self._truncate_prompt(prompt)
 
         stream_parts = []
         final_response = ""
 
         try:
             summary_model = os.getenv("SUMMARY_MODEL", "qwen3:0.6b")
-            async for chunk in self.llm_client.gen_stream(prompt, model=summary_model):
+            async for chunk in self.llm_client.gen_stream(truncated_prompt, model=summary_model):
                 stream_parts.append(chunk)
                 current_response = "".join(stream_parts)
                 thinking_content, summary_content = self.extract_think_content(

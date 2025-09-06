@@ -33,6 +33,9 @@ class AppRouter:
 
     def go_to_input_page(self):
         """Navigate to input page and reset model states."""
+        # Reset all model states before clearing session
+        self._reset_all_model_states()
+        
         # Preserving essential keys like 'app_router' and 'page'
         preserved_keys = {"app_router", "page"}
         for key in list(st.session_state.keys()):
@@ -50,6 +53,26 @@ class AppRouter:
     def set_target_url(self, url: str):
         """Save URL to session state for processing"""
         st.session_state.target_url = url
+    
+    # --- Private helper methods ---
+    
+    def _reset_all_model_states(self):
+        """Reset all model states to ensure clean session start"""
+        # Reset conversation model if exists
+        if "conversation_model" in st.session_state:
+            st.session_state.conversation_model.reset()
+        
+        # Reset vector store if exists  
+        if "vector_store" in st.session_state:
+            st.session_state.vector_store.reset()
+            
+        # Reset summarization model if exists
+        if "summarization_model" in st.session_state:
+            st.session_state.summarization_model.reset()
+            
+        # Reset scraping model if exists
+        if "scraping_model" in st.session_state:
+            st.session_state.scraping_model.reset()
 
 
 # Initialize app_router only if it doesn't exist
