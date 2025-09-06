@@ -19,11 +19,11 @@ class ConversationModel(ConversationModelProtocol):
     def _truncate_prompt(self, prompt: str, max_chars: int = 4000) -> str:
         """
         Truncate prompt from the end if it exceeds max_chars to preserve important context at the beginning.
-        
+
         Args:
             prompt: The prompt to potentially truncate
             max_chars: Maximum number of characters allowed (default: 4000)
-            
+
         Returns:
             str: Truncated prompt if necessary
         """
@@ -108,7 +108,9 @@ class ConversationModel(ConversationModelProtocol):
 
             truncated_qa_prompt = self._truncate_prompt(qa_prompt)
             question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
-            response = await self.client.gen_batch(truncated_qa_prompt, model=question_model)
+            response = await self.client.gen_batch(
+                truncated_qa_prompt, model=question_model
+            )
             return response
         except Exception:
             self.last_error = "応答の生成に失敗しました。"

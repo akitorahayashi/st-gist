@@ -41,7 +41,7 @@ def initialize_session():
     # Initialize AppRouter
     if "app_router" not in st.session_state:
         st.session_state.app_router = AppRouter()
-    
+
     # セッション初期化を確実にするため、アプリケーション開始時の状態確認
     if "session_initialized" not in st.session_state:
         st.session_state.session_initialized = True

@@ -83,3 +83,22 @@ def render_url_input_form():
                 scraping_model.last_error = str(e)
 
         st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)
+
+        # おすすめのサイト
+        st.markdown("### おすすめのサイト")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown(
+                '<a href="https://techcrunch.com/" target="_blank" style="text-decoration: none;"><button style="width: 100%; padding: 0.5rem; background: #ff4b4b; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">TechCrunch</button></a>',
+                unsafe_allow_html=True,
+            )
+        with col2:
+            st.markdown(
+                '<a href="https://www.nature.com/" target="_blank" style="text-decoration: none;"><button style="width: 100%; padding: 0.5rem; background: #ff4b4b; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">Nature</button></a>',
+                unsafe_allow_html=True,
+            )
+        with col3:
+            st.markdown(
+                '<a href="https://docs.python.org/ja/3.12/" target="_blank" style="text-decoration: none;"><button style="width: 100%; padding: 0.5rem; background: #ff4b4b; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">Python Documentation</button></a>',
+                unsafe_allow_html=True,
+            )
