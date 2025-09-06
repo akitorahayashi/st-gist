@@ -1,6 +1,5 @@
 import numpy as np
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 class VectorStore:
@@ -57,7 +56,12 @@ class VectorStore:
 
         self._ensure_initialized()
         query_vec = self.model.encode([query])[0]
-        similarities = cosine_similarity([query_vec], self.embeddings)[0]
+
+        # Calculate cosine similarity using numpy
+        dot_product = np.dot(self.embeddings, query_vec)
+        query_norm = np.linalg.norm(query_vec)
+        embedding_norms = np.linalg.norm(self.embeddings, axis=1)
+        similarities = dot_product / (query_norm * embedding_norms)
 
         # Get top-k indices sorted by similarity in descending order
         top_indices = np.argsort(similarities)[::-1][:top_k]
