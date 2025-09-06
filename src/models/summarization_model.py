@@ -29,17 +29,19 @@ class SummarizationModel(SummarizationModelProtocol):
         self.last_error = None
         self._summarization_prompt_template = self._load_summarization_prompt_template()
 
-    def _truncate_prompt(self, prompt: str, max_chars: int = 4000) -> str:
+    def _truncate_prompt(self, prompt: str, max_chars: int = None) -> str:
         """
         Truncate prompt from the end if it exceeds max_chars to preserve important context at the beginning.
 
         Args:
             prompt: The prompt to potentially truncate
-            max_chars: Maximum number of characters allowed (default: 4000)
+            max_chars: Maximum number of characters allowed (default from MAX_PROMPT_LENGTH env var)
 
         Returns:
             str: Truncated prompt if necessary
         """
+        if max_chars is None:
+            max_chars = int(os.getenv("MAX_PROMPT_LENGTH", "4000"))
         if len(prompt) <= max_chars:
             return prompt
         return prompt[:max_chars]
