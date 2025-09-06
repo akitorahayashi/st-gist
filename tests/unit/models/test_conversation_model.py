@@ -96,9 +96,21 @@ class TestConversationModel:
 
     # --- respond_to_user_message test ---
     @pytest.mark.asyncio
-    @patch.dict("os.environ", {"QUESTION_MODEL": "test-model"})
-    async def test_respond_to_user_message(self, conversation_model, mock_client):
+    @patch("src.models.conversation_model.st.secrets")
+    async def test_respond_to_user_message(
+        self, mock_secrets, conversation_model, mock_client
+    ):
         """Test the respond_to_user_message method."""
+
+        def get_secret(key, default=None):
+            if key == "QUESTION_MODEL":
+                return "test-model"
+            if key == "MAX_PROMPT_LENGTH":
+                return 4000
+            return default
+
+        mock_secrets.get.side_effect = get_secret
+
         user_question = "User question"
         # Build the expected prompt using the model's template
         template_content = conversation_model._qa_prompt_template.template

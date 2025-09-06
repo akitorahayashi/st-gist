@@ -3,14 +3,13 @@ import subprocess
 import time
 
 import requests
-from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-load_dotenv()
+from tests.utils import load_secrets
 
 
 class TestE2E:
@@ -18,8 +17,9 @@ class TestE2E:
 
     def test_streamlit_app_loads_without_module_errors(self):
         """Test that the Streamlit app loads completely without module import errors"""
-        test_port = os.getenv("TEST_PORT", "8502")
-        host_ip = os.getenv("HOST_IP", "localhost")
+        secrets = load_secrets()
+        test_port = secrets.get("TEST_PORT", 8502)
+        host_ip = secrets.get("HOST_IP", "localhost")
 
         project_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -27,7 +27,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Create .env file from example
-        run: cp .env.example .env
+        run: cp .streamlit/secrets.example.toml .streamlit/secrets.toml
 
       - name: Run tests
         run: uv run make ${{ matrix.test_target }}
