@@ -103,52 +103,21 @@ def render_url_input_form():
             st.rerun()  # メインループでのst.rerun()は有効
 
         # おすすめのサイト
-        st.markdown("### おすすめのサイト")
-
-        # Check if scraping is in progress to disable buttons
-        is_disabled = scraping_model.is_scraping
-
-        # JavaScript for enhanced link protection
-        st.markdown(
-            f"""
-        <script>
-        window.processingInProgress = {str(is_disabled).lower()};
-        </script>
-        """,
-            unsafe_allow_html=True,
-        )
+        st.markdown("### おすすめのまとめサイト")
 
         col1, col2, col3 = st.columns(3)
         with col1:
-            if is_disabled:
-                st.markdown(
-                    '<span class="recommendation-button disabled">TechCrunch （処理中...）</span>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<a href="https://techcrunch.com/" target="_blank" class="recommendation-button" onclick="if(window.processingInProgress) { alert(\'要約処理中です。完了後にお試しください。\'); return false; }">TechCrunch</a>',
-                    unsafe_allow_html=True,
-                )
+            st.markdown(
+                '<a href="https://techcrunch.com/" target="_blank" class="recommendation-button">TechCrunch</a>',
+                unsafe_allow_html=True,
+            )
         with col2:
-            if is_disabled:
-                st.markdown(
-                    '<span class="recommendation-button disabled">Nature （処理中...）</span>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<a href="https://www.nature.com/" target="_blank" class="recommendation-button" onclick="if(window.processingInProgress) { alert(\'要約処理中です。完了後にお試しください。\'); return false; }">Nature</a>',
-                    unsafe_allow_html=True,
-                )
+            st.markdown(
+                '<a href="https://venturebeat.com/" target="_blank" class="recommendation-button">VentureBeat AI</a>',
+                unsafe_allow_html=True,
+            )
         with col3:
-            if is_disabled:
-                st.markdown(
-                    '<span class="recommendation-button disabled">Python Documentation （処理中...）</span>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<a href="https://docs.python.org/ja/3.12/" target="_blank" class="recommendation-button" onclick="if(window.processingInProgress) { alert(\'要約処理中です。完了後にお試しください。\'); return false; }">Python Documentation</a>',
-                    unsafe_allow_html=True,
-                )
+            st.markdown(
+                '<a href="https://docs.python.org/ja/3.12/" target="_blank" class="recommendation-button">Python Documentation</a>',
+                unsafe_allow_html=True,
+            )
