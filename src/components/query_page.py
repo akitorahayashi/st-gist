@@ -14,8 +14,10 @@ def render_query_page():
 
     conversation_model: ConversationModel = st.session_state.get("conversation_model")
 
-    # Get summarization model from session_state
+    # Get models from session_state
     summarization_model = st.session_state.get("summarization_model")
+    scraping_model = st.session_state.get("scraping_model")
+    vector_store = st.session_state.get("vector_store")
 
     # Load CSS for query page styling
     try:
@@ -26,9 +28,6 @@ def render_query_page():
         pass  # CSS file not found, continue without styling
 
     st.title("Query Page")
-
-    # Get scraping model from session_state
-    scraping_model = st.session_state.get("scraping_model")
 
     # Get all necessary data from models and session_state
     target_url = st.session_state.get("target_url", "")
@@ -117,6 +116,10 @@ def render_query_page():
 
                 finally:
                     loop.close()
+                    # Execute vectorization after summarization is complete
+                    if scraped_content and vector_store:
+                        with st.spinner("ページコンテンツを分析中..."):
+                            vector_store.create_embeddings(scraped_content)
             except Exception as e:
                 summarization_model.last_error = (
                     f"要約の生成中にエラーが発生しました: {str(e)}"
@@ -151,11 +154,20 @@ def render_query_page():
     # Handle AI response generation
     if conversation_model.is_responding:
         try:
+            user_query = conversation_model.messages[-1]["content"]
+            # Retrieve relevant context from vector search
+            relevant_content = ""
+            if vector_store:
+                relevant_content = vector_store.search(user_query)
+            # If no context is retrieved, use the summary as a substitute
+            if not relevant_content:
+                relevant_content = page_summary
+
             response = asyncio.run(
                 conversation_model.respond_to_user_message(
-                    conversation_model.messages[-1]["content"],
+                    user_query,
                     summary=page_summary,
-                    scraped_content=scraped_content,
+                    scraped_content=relevant_content,  # Modified here
                 )
             )
             _, clean_response = conversation_model.extract_think_content(response)

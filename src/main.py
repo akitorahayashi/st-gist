@@ -8,6 +8,7 @@ from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
 from src.models import ConversationModel, ScrapingModel, SummarizationModel
 from src.router import AppRouter, Page
+from src.services.vector_store import VectorStore
 
 # Load environment variables
 load_dotenv()
@@ -70,6 +71,10 @@ def initialize_session():
             st.session_state.summarization_model = SummarizationModel(
                 st.session_state.ollama_client
             )
+
+    # Initialize vector store
+    if "vector_store" not in st.session_state:
+        st.session_state.vector_store = VectorStore()
 
 
 if __name__ == "__main__":
