@@ -9,6 +9,7 @@ import streamlit as st  # noqa: E402
 from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient  # noqa: E402
 
 from src.components.query_page import render_query_page  # noqa: E402
+from src.components.sidebar import render_sidebar  # noqa: E402
 from src.components.url_input_page import render_url_input_page  # noqa: E402
 from src.models import (  # noqa: E402
     ConversationModel,
@@ -25,16 +26,27 @@ def load_model(model_class, _client):
     return model_class(_client)
 
 
+st.set_page_config(
+    page_title="Gist",
+    page_icon="📝",
+    # "centered"/"wide"
+    layout="centered",
+    # "auto"/"expanded"/"collapsed"
+    initial_sidebar_state="auto",
+)
+
+
 def main():
-    st.set_page_config(page_title="Gist", page_icon="📝", layout="centered")
 
     initialize_session()
 
     # Route based on page state using AppRouter and Page Enum
     if st.session_state.app_router.current_page == Page.CHAT:
         render_query_page()
+        render_sidebar(Page.CHAT)
     else:  # default to Page.INPUT
         render_url_input_page()
+        render_sidebar(Page.INPUT)
 
 
 def initialize_session():

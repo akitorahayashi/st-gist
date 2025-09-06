@@ -94,6 +94,21 @@ class TestConversationModel:
         assert thinking_content == expected_think
         assert cleaned_text == expected_clean
 
+    def test_format_chat_history(self, conversation_model):
+        """Test the _format_chat_history method."""
+        conversation_model.add_user_message("Hello")
+        conversation_model.add_ai_message("Hi there")
+        conversation_model.add_user_message("How are you?")
+        # The last message is not included in the history
+        history = conversation_model._format_chat_history()
+        expected_history = "ユーザー: Hello\nAI: Hi there"
+        assert history == expected_history
+
+    def test_format_chat_history_empty(self, conversation_model):
+        """Test the _format_chat_history method with no history."""
+        history = conversation_model._format_chat_history()
+        assert history == ""
+
     # --- respond_to_user_message test ---
     @pytest.mark.asyncio
     @patch("src.models.conversation_model.st.secrets")
@@ -117,6 +132,7 @@ class TestConversationModel:
         expected_prompt = Template(template_content).safe_substitute(
             summary="",
             user_message=user_question,
+            chat_history="",
             vector_search_content="",
             page_content="",
         )
