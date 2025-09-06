@@ -1,10 +1,5 @@
 /* URL Input Page Specific Styles */
 
-/* Hide Streamlit sidebar */
-[data-testid="stSidebar"] {
-    display: none;
-}
-
 /* Modern Layout System */
 .main .block-container {
     display: flex;
@@ -49,7 +44,7 @@
 }
 
 /* Modern Input Field Design */
-.stTextInput > div > div > input {
+.stTextInput>div>div>input {
     text-align: center;
     font-size: var(--text-lg);
     padding: var(--spacing-md) var(--spacing-lg);
@@ -62,19 +57,19 @@
     box-shadow: var(--shadow-sm);
 }
 
-.stTextInput > div > div > input:focus {
+.stTextInput>div>div>input:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
     outline: none;
 }
 
-.stTextInput > div > div > input::placeholder {
+.stTextInput>div>div>input::placeholder {
     color: var(--text-muted);
     font-weight: var(--font-weight-normal);
 }
 
 /* Premium Button Design */
-.stButton > button {
+.stButton>button {
     width: 100%;
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: var(--text-inverse) !important;
@@ -90,19 +85,19 @@
     overflow: hidden !important;
 }
 
-.stButton > button:hover {
+.stButton>button:hover {
     background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-active) 100%) !important;
     transform: translateY(-1px) !important;
     box-shadow: var(--shadow-xl) !important;
     color: var(--text-inverse) !important;
 }
 
-.stButton > button:active {
+.stButton>button:active {
     transform: translateY(0) !important;
     box-shadow: var(--shadow-md) !important;
 }
 
-.stButton > button:focus {
+.stButton>button:focus {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%) !important;
     box-shadow: var(--shadow-lg), 0 0 0 3px rgb(37 99 235 / 0.3) !important;
     color: var(--text-inverse) !important;
@@ -110,7 +105,7 @@
 }
 
 /* Processing/Disabled Button State */
-.stButton > button:disabled {
+.stButton>button:disabled {
     background: var(--secondary-color) !important;
     color: var(--text-inverse) !important;
     cursor: not-allowed !important;
@@ -119,7 +114,7 @@
     box-shadow: var(--shadow-sm) !important;
 }
 
-.stButton > button[disabled] {
+.stButton>button[disabled] {
     background: var(--secondary-color) !important;
     color: var(--text-inverse) !important;
 }
@@ -139,21 +134,21 @@
         max-width: 95%;
         padding: var(--spacing-lg) var(--spacing-md);
     }
-    
+
     .main h1 {
         font-size: var(--text-4xl);
     }
-    
+
     .main p {
         font-size: var(--text-base);
     }
-    
-    .stTextInput > div > div > input {
+
+    .stTextInput>div>div>input {
         font-size: var(--text-base);
         padding: 0.875rem 1.25rem;
     }
-    
-    .stButton > button {
+
+    .stButton>button {
         font-size: var(--text-base) !important;
         padding: 0.875rem var(--spacing-lg) !important;
     }
@@ -163,19 +158,19 @@
     .main h1 {
         font-size: var(--text-3xl);
     }
-    
+
     .main p {
         font-size: var(--text-sm);
     }
 }
 
 /* Focus visible for accessibility */
-.stButton > button:focus-visible {
+.stButton>button:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
 
-.stTextInput > div > div > input:focus-visible {
+.stTextInput>div>div>input:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }

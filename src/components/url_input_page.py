@@ -22,7 +22,7 @@ def render_url_input_form():
     css_files = [
         "src/static/css/root.css",
         "src/static/css/url_input_page.css",
-        "src/static/css/recommendation-buttons.css",
+        "src/static/css/custom-button.css",
     ]
 
     for css_file in css_files:
@@ -89,7 +89,13 @@ def render_url_input_form():
             except ValueError as e:
                 scraping_model.last_error = str(e)
 
-        st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)
+        # Hidden native button for actual functionality
+        st.button(
+            "要約を開始",
+            use_container_width=True,
+            on_click=on_summarize_click,
+            key="hidden_summarize_button",
+        )
 
         # メインループでのフラグ処理
         if st.session_state.get("should_start_scraping", False):
@@ -101,23 +107,3 @@ def render_url_input_form():
             app_router.set_target_url(target_url)
             scraping_model.is_scraping = True
             st.rerun()  # メインループでのst.rerun()は有効
-
-        # おすすめのサイト
-        st.markdown("### おすすめのまとめサイト")
-
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.markdown(
-                '<a href="https://techcrunch.com/" target="_blank" class="recommendation-button">TechCrunch</a>',
-                unsafe_allow_html=True,
-            )
-        with col2:
-            st.markdown(
-                '<a href="https://venturebeat.com/" target="_blank" class="recommendation-button">VentureBeat AI</a>',
-                unsafe_allow_html=True,
-            )
-        with col3:
-            st.markdown(
-                '<a href="https://docs.python.org/ja/3.12/" target="_blank" class="recommendation-button">Python Documentation</a>',
-                unsafe_allow_html=True,
-            )

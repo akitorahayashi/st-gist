@@ -3,7 +3,6 @@ import html
 
 import streamlit as st
 
-from src.components.sidebar import render_sidebar
 from src.models import ConversationModel
 
 
@@ -125,9 +124,6 @@ def render_query_page():
     # Add divider before chat if we have content
     if current_thinking.strip() or page_summary.strip():
         st.markdown("---")
-
-    # Render sidebar
-    render_sidebar()
 
     # --- Chat Logic --- #
     _render_chat_messages(

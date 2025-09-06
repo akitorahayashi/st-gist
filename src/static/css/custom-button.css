@@ -1,5 +1,5 @@
-/* Recommendation Buttons Styling */
-.recommendation-button {
+/* Custom Button Styling */
+.custom-button {
     display: inline-block;
     width: 100%;
     padding: 0.75rem 1rem;
@@ -19,14 +19,14 @@
     overflow: hidden;
 }
 
-.recommendation-button:link,
-.recommendation-button:visited,
-.recommendation-button:active {
+.custom-button:link,
+.custom-button:visited,
+.custom-button:active {
     color: white !important;
     text-decoration: none !important;
 }
 
-.recommendation-button.disabled {
+.custom-button.disabled {
     background: #9ca3af !important;
     cursor: not-allowed !important;
     opacity: 0.6 !important;
@@ -35,7 +35,7 @@
     box-shadow: none !important;
 }
 
-.recommendation-button:not(.disabled):hover {
+.custom-button:not(.disabled):hover {
     background: linear-gradient(135deg, #52525b 0%, #374151 100%);
     transform: translateY(-1px);
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
@@ -43,7 +43,7 @@
     text-decoration: none !important;
 }
 
-.recommendation-button:not(.disabled):active {
+.custom-button:not(.disabled):active {
     transform: translateY(0);
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
