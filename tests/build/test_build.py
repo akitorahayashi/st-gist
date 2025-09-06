@@ -3,9 +3,8 @@ import subprocess
 import time
 
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
+from tests.utils import load_secrets
 
 
 class TestBuild:
@@ -15,8 +14,9 @@ class TestBuild:
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         app_path = os.path.join(project_root, "src", "main.py")
         
-        host_ip = os.getenv("HOST_IP", "localhost")
-        test_port = os.getenv("TEST_PORT", "8502")
+        secrets = load_secrets()
+        host_ip = secrets.get("HOST_IP", "localhost")
+        test_port = secrets.get("TEST_PORT", 8502)
 
         # Define path to venv streamlit
         streamlit_path = os.path.join(project_root, ".venv", "bin", "streamlit")

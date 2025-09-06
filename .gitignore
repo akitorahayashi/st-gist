@@ -17,6 +17,7 @@ __pycache__/
 .venv
 env/
 venv/
+.streamlit/secrets.toml
 
 # Package Distribution
 .eggs/

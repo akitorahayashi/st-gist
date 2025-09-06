@@ -3,6 +3,7 @@ import re
 from string import Template
 from typing import AsyncGenerator
 
+import streamlit as st
 from sdk.olm_api_client import OllamaClientProtocol
 
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
@@ -28,7 +29,7 @@ class ConversationModel(ConversationModelProtocol):
             str: Truncated prompt if necessary
         """
         if max_chars is None:
-            max_chars = int(os.getenv("MAX_PROMPT_LENGTH", "4000"))
+            max_chars = st.secrets.get("MAX_PROMPT_LENGTH", 4000)
         if len(prompt) <= max_chars:
             return prompt
         return prompt[:max_chars]
@@ -60,7 +61,7 @@ class ConversationModel(ConversationModelProtocol):
         self.last_error = None
         try:
             truncated_message = self._truncate_prompt(user_message)
-            question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+            question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
             async for chunk in self.client.gen_stream(
                 truncated_message, model=question_model
             ):
@@ -76,7 +77,7 @@ class ConversationModel(ConversationModelProtocol):
         Generates a complete response from the client at once.
         """
         truncated_message = self._truncate_prompt(user_message)
-        question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+        question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
         return await self.client.gen_batch(truncated_message, model=question_model)
 
     async def respond_to_user_message(
@@ -109,7 +110,7 @@ class ConversationModel(ConversationModelProtocol):
             )
 
             truncated_qa_prompt = self._truncate_prompt(qa_prompt)
-            question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+            question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
             response = await self.client.gen_batch(
                 truncated_qa_prompt, model=question_model
             )

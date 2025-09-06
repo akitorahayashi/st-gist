@@ -2,7 +2,6 @@ import os
 import sys
 
 import streamlit as st
-from dotenv import load_dotenv
 from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient
 
 from src.components.query_page import render_query_page
@@ -10,22 +9,15 @@ from src.components.url_input_page import render_url_input_page
 from src.models import ConversationModel, ScrapingModel, SummarizationModel, VectorStore
 from src.router import AppRouter, Page
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-# Load environment variables
-load_dotenv()
-
-
-@st.cache_data
-def load_summarization_model(_client):
-    """SummarizationModelをセッション毎にキャッシュしてロードする"""
-    return SummarizationModel(_client)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 
 @st.cache_data
-def load_conversation_model(_client):
-    """ConversationModelをセッション毎にキャッシュしてロードする"""
-    return ConversationModel(_client)
+def load_model(model_class, _client):
+    """モデルをセッション毎にキャッシュしてロードする"""
+    return model_class(_client)
 
 
 def main():
@@ -53,21 +45,14 @@ def initialize_session():
 
     # Client should be initialized regardless of the page
     if "ollama_client" not in st.session_state:
-        is_debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
+        is_debug = st.secrets.get("DEBUG", False)
         if is_debug:
             st.session_state.ollama_client = MockOllamaApiClient(token_delay=0.01)
         else:
-            ollama_api_endpoint = os.getenv("OLM_API_ENDPOINT")
-            if not ollama_api_endpoint:
-                # Fallback to Streamlit secrets if available
-                try:
-                    ollama_api_endpoint = st.secrets.get("OLM_API_ENDPOINT")
-                except Exception:
-                    pass
-
+            ollama_api_endpoint = st.secrets.get("OLM_API_ENDPOINT")
             if not ollama_api_endpoint:
                 raise ValueError(
-                    "OLM_API_ENDPOINT is not configured in environment variables or Streamlit secrets."
+                    "OLM_API_ENDPOINT is not configured in Streamlit secrets."
                 )
 
             st.session_state.ollama_client = OllamaApiClient(
@@ -77,15 +62,15 @@ def initialize_session():
     # Initialize summarization model
     if "summarization_model" not in st.session_state:
         if "ollama_client" in st.session_state:
-            st.session_state.summarization_model = load_summarization_model(
-                st.session_state.ollama_client
+            st.session_state.summarization_model = load_model(
+                SummarizationModel, st.session_state.ollama_client
             )
 
     # Initialize conversation model
     if "conversation_model" not in st.session_state:
         if "ollama_client" in st.session_state:
-            st.session_state.conversation_model = load_conversation_model(
-                st.session_state.ollama_client
+            st.session_state.conversation_model = load_model(
+                ConversationModel, st.session_state.ollama_client
             )
 
     # Initialize scraping model

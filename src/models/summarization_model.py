@@ -3,6 +3,7 @@ import os
 import re
 from string import Template
 
+import streamlit as st
 from sdk.olm_api_client import OllamaClientProtocol
 
 from src.protocols.models.summarization_model_protocol import SummarizationModelProtocol
@@ -41,7 +42,7 @@ class SummarizationModel(SummarizationModelProtocol):
             str: Truncated prompt if necessary
         """
         if max_chars is None:
-            max_chars = int(os.getenv("MAX_PROMPT_LENGTH", "4000"))
+            max_chars = st.secrets.get("MAX_PROMPT_LENGTH", 4000)
         if len(prompt) <= max_chars:
             return prompt
         return prompt[:max_chars]
@@ -131,7 +132,7 @@ class SummarizationModel(SummarizationModelProtocol):
         final_response = ""
 
         try:
-            summary_model = os.getenv("SUMMARY_MODEL", "qwen3:0.6b")
+            summary_model = st.secrets.get("SUMMARY_MODEL", "qwen3:0.6b")
             async for chunk in self.llm_client.gen_stream(
                 truncated_prompt, model=summary_model
             ):
