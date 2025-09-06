@@ -1,17 +1,22 @@
 import os
 import sys
 
-import streamlit as st
-from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient
-
-from src.components.query_page import render_query_page
-from src.components.url_input_page import render_url_input_page
-from src.models import ConversationModel, ScrapingModel, SummarizationModel, VectorStore
-from src.router import AppRouter, Page
-
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+
+import streamlit as st  # noqa: E402
+from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient  # noqa: E402
+
+from src.components.query_page import render_query_page  # noqa: E402
+from src.components.url_input_page import render_url_input_page  # noqa: E402
+from src.models import (  # noqa: E402
+    ConversationModel,
+    ScrapingModel,
+    SummarizationModel,
+    VectorStore,
+)
+from src.router import AppRouter, Page  # noqa: E402
 
 
 @st.cache_data
