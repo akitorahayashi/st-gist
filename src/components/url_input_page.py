@@ -19,12 +19,19 @@ def render_url_input_form():
     scraping_model = st.session_state.scraping_model
 
     # Load CSS for URL input page styling
-    try:
-        with open("src/static/css/url_input_page.css", "r", encoding="utf-8") as f:
-            css_content = f.read()
-        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass  # CSS file not found, continue without styling
+    css_files = [
+        "src/static/css/root.css",
+        "src/static/css/url_input_page.css",
+        "src/static/css/recommendation-buttons.css"
+    ]
+    
+    for css_file in css_files:
+        try:
+            with open(css_file, "r", encoding="utf-8") as f:
+                css_content = f.read()
+            st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            pass  # CSS file not found, continue without styling
 
     with st.container():
         # --- 処理中の場合のロジック ---
@@ -76,29 +83,70 @@ def render_url_input_form():
                 return
             try:
                 scraping_model.validate_url(current_url.strip())
-
-                app_router.set_target_url(current_url.strip())
-                scraping_model.is_scraping = True
+                # session_stateにフラグを設定して、メインループで処理させる
+                st.session_state.should_start_scraping = True
+                st.session_state.target_url_to_scrape = current_url.strip()
             except ValueError as e:
                 scraping_model.last_error = str(e)
 
         st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)
+        
+        # メインループでのフラグ処理
+        if st.session_state.get("should_start_scraping", False):
+            # フラグをクリアして、処理を開始
+            st.session_state.should_start_scraping = False
+            target_url = st.session_state.get("target_url_to_scrape", "")
+            
+            # 処理開始
+            app_router.set_target_url(target_url)
+            scraping_model.is_scraping = True
+            st.rerun()  # メインループでのst.rerun()は有効
 
         # おすすめのサイト
         st.markdown("### おすすめのサイト")
+        
+        # Check if scraping is in progress to disable buttons
+        is_disabled = scraping_model.is_scraping
+        disabled_class = "disabled" if is_disabled else ""
+        
+        # JavaScript for enhanced link protection
+        st.markdown(f"""
+        <script>
+        window.processingInProgress = {str(is_disabled).lower()};
+        </script>
+        """, unsafe_allow_html=True)
+        
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.markdown(
-                '<a href="https://techcrunch.com/" target="_blank" style="text-decoration: none;"><button style="width: 100%; padding: 0.5rem; background: #ff4b4b; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">TechCrunch</button></a>',
-                unsafe_allow_html=True,
-            )
+            if is_disabled:
+                st.markdown(
+                    '<span class="recommendation-button disabled">TechCrunch （処理中...）</span>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<a href="https://techcrunch.com/" target="_blank" class="recommendation-button" onclick="if(window.processingInProgress) { alert(\'要約処理中です。完了後にお試しください。\'); return false; }">TechCrunch</a>',
+                    unsafe_allow_html=True,
+                )
         with col2:
-            st.markdown(
-                '<a href="https://www.nature.com/" target="_blank" style="text-decoration: none;"><button style="width: 100%; padding: 0.5rem; background: #ff4b4b; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">Nature</button></a>',
-                unsafe_allow_html=True,
-            )
+            if is_disabled:
+                st.markdown(
+                    '<span class="recommendation-button disabled">Nature （処理中...）</span>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<a href="https://www.nature.com/" target="_blank" class="recommendation-button" onclick="if(window.processingInProgress) { alert(\'要約処理中です。完了後にお試しください。\'); return false; }">Nature</a>',
+                    unsafe_allow_html=True,
+                )
         with col3:
-            st.markdown(
-                '<a href="https://docs.python.org/ja/3.12/" target="_blank" style="text-decoration: none;"><button style="width: 100%; padding: 0.5rem; background: #ff4b4b; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">Python Documentation</button></a>',
-                unsafe_allow_html=True,
-            )
+            if is_disabled:
+                st.markdown(
+                    '<span class="recommendation-button disabled">Python Documentation （処理中...）</span>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<a href="https://docs.python.org/ja/3.12/" target="_blank" class="recommendation-button" onclick="if(window.processingInProgress) { alert(\'要約処理中です。完了後にお試しください。\'); return false; }">Python Documentation</a>',
+                    unsafe_allow_html=True,
+                )
