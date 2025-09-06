@@ -9,13 +9,22 @@ You will be given a text to summarize. Your task is to generate a concise summar
 2.  Create a bulleted list of the most important key points from the text.
 3.  Aim for 3 key points, but you can provide a maximum of 5.
 4.  Ensure each bullet point is concise and under 100 characters.
-5.  Format the final output as specified below:
-    - タイトル: [Your generated title]
-    - 要点:
-        - [Point 1]
-        - [Point 2]
-        - [Point 3]
-        - ... add other points as needed, up to a total of five
+5.  Extract 5-10 relevant keywords that would be useful for asking questions about the content.
+6.  Format the final output as specified below:
+    
+---
+
+タイトル: [Your generated title]
+
+要点:
+- [Point 1]
+- [Point 2]
+- [Point 3]
+- ... add other points as needed, up to a total of five
+
+質問キーワード: [Keyword 1]、[Keyword 2]、[Keyword 3]、[Keyword 4]、[Keyword 5]、[Keyword 6]、[Keyword 7]、[Keyword 8]、[Keyword 9]、[Keyword 10]
+
+---
 
 ## Constraints
 - **MUST** respond in Japanese.
