@@ -102,7 +102,7 @@ class TestConversationModel:
         # Build the expected prompt using the model's template
         template_content = conversation_model._qa_prompt_template.template
         expected_prompt = Template(template_content).safe_substitute(
-            summary="", user_message=user_question, scraped_content=""
+            summary="", user_message=user_question, retrieved_content=""
         )
 
         response = await conversation_model.respond_to_user_message(user_question)

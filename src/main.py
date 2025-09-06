@@ -6,9 +6,8 @@ from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient
 
 from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
-from src.models import ConversationModel, ScrapingModel, SummarizationModel
+from src.models import ConversationModel, ScrapingModel, SummarizationModel, VectorStore
 from src.router import AppRouter, Page
-from src.services.vector_store import VectorStore
 
 # Load environment variables
 load_dotenv()
@@ -24,12 +23,6 @@ def load_summarization_model(_client):
 def load_conversation_model(_client):
     """ConversationModelをキャッシュしてロードする"""
     return ConversationModel(_client)
-
-
-@st.cache_resource
-def load_vector_store():
-    """VectorStoreをキャッシュしてロードする"""
-    return VectorStore()
 
 
 def main():
@@ -90,9 +83,9 @@ def initialize_session():
     if "scraping_model" not in st.session_state:
         st.session_state.scraping_model = ScrapingModel()
 
-    # Initialize vector store
+    # Initialize vector store (lazy initialization - model loads only when needed)
     if "vector_store" not in st.session_state:
-        st.session_state.vector_store = load_vector_store()
+        st.session_state.vector_store = VectorStore()
 
 
 if __name__ == "__main__":

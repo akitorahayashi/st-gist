@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.services.vector_store import VectorStore
+from src.models.vector_store import VectorStore
 
 
 @pytest.fixture
@@ -12,7 +12,8 @@ def vector_store():
 
 def test_vector_store_initialization(vector_store):
     """Test VectorStore initialization."""
-    assert vector_store.model is not None
+    assert vector_store.model is None  # Lazy loading - model not loaded yet
+    assert not vector_store.is_initialized
     assert vector_store.texts == []
     assert vector_store.embeddings is None
     assert not vector_store.is_creating
@@ -24,6 +25,10 @@ def test_create_embeddings(vector_store):
     text = "This is a test sentence. This is another test sentence."
     vector_store.create_embeddings(text)
 
+    assert (
+        vector_store.is_initialized
+    )  # Model should be initialized after create_embeddings
+    assert vector_store.model is not None
     assert not vector_store.is_creating
     assert vector_store.last_error is None
     assert len(vector_store.texts) > 0

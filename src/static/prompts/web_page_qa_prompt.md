@@ -18,11 +18,11 @@ You will be given the text content of a web page and a user's question. Your tas
 
 ## Constraints
 
-- **DO NOT** use any external knowledge or information outside of the provided "Web Page Text".
+- **DO NOT** use any external knowledge or information outside of the provided "Reference Text".
 
 - **MUST** respond in the same language as the user's question.
 
-- If the answer cannot be found within the text, you **MUST** respond with: "I could not find the answer to your question in the provided text." (in the same language as the user's question)
+- If the answer cannot be found within the "Reference Text", you **should state that you could not find the specific answer in the provided text, but try to provide a helpful response based on the "Your Summarization" and the context of the full page without making up information.**
 
 - Do not invent, assume, or infer any information that is not explicitly stated in the text.
 
@@ -44,6 +44,6 @@ ${summary}
 
 ${user_message}
 
-### Web Page Text:
+### Reference Text:
 
 ${retrieved_content}

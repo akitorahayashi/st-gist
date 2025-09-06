@@ -116,10 +116,6 @@ def render_query_page():
 
                 finally:
                     loop.close()
-                    # Execute vectorization after summarization is complete
-                    if scraped_content and vector_store:
-                        with st.spinner("ページコンテンツを分析中..."):
-                            vector_store.create_embeddings(scraped_content)
             except Exception as e:
                 summarization_model.last_error = (
                     f"要約の生成中にエラーが発生しました: {str(e)}"
@@ -155,19 +151,26 @@ def render_query_page():
     if conversation_model.is_responding:
         try:
             user_query = conversation_model.messages[-1]["content"]
+            # Get page content from scraping model
+            page_content = scraping_model.content if scraping_model else ""
             # Retrieve relevant context from vector search
-            relevant_content = ""
+            searched_content = ""
             if vector_store:
-                relevant_content = vector_store.search(user_query)
-            # If no context is retrieved, use a message indicating no relevant content found
-            if not relevant_content:
-                relevant_content = "質問に関連する具体的なコンテンツが見つかりませんでした。"
+                searched_content = vector_store.search(user_query)
+
+            # Combine search results and full page content as context for LLM
+            combined_content = f"""## Retrieved from Vector Search:
+{searched_content}
+
+## Full Page Content:
+{page_content}
+"""
 
             response = asyncio.run(
                 conversation_model.respond_to_user_message(
                     user_query,
                     summary=page_summary,
-                    retrieved_content=relevant_content,  # Modified here
+                    retrieved_content=combined_content,
                 )
             )
             _, clean_response = conversation_model.extract_think_content(response)
