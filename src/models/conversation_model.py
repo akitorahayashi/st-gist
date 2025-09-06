@@ -42,7 +42,10 @@ class ConversationModel(ConversationModelProtocol):
         self.is_responding = True
         self.last_error = None
         try:
-            async for chunk in self.client.gen_stream(user_message):
+            question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+            async for chunk in self.client.gen_stream(
+                user_message, model=question_model
+            ):
                 yield chunk
         except Exception as e:
             self.last_error = str(e)
@@ -54,13 +57,14 @@ class ConversationModel(ConversationModelProtocol):
         """
         Generates a complete response from the client at once.
         """
-        return await self.client.gen_batch(user_message)
+        question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+        return await self.client.gen_batch(user_message, model=question_model)
 
     async def respond_to_user_message(
         self,
         user_message: str,
         summary: str = "",
-        retrieved_content: str = "",
+        reference_text: str = "",
     ) -> str:
         """
         Generate a response to user message with automatic state management using Web Page Q&A format.
@@ -68,7 +72,7 @@ class ConversationModel(ConversationModelProtocol):
         Args:
             user_message: The user's message to respond to
             summary: The summarization of the web page
-            retrieved_content: The retrieved content from vector search
+            reference_text: The reference content from vector search
 
         Returns:
             str: The AI's response
@@ -79,10 +83,11 @@ class ConversationModel(ConversationModelProtocol):
             qa_prompt = self._qa_prompt_template.safe_substitute(
                 summary=summary,
                 user_message=user_message,
-                retrieved_content=retrieved_content,
+                reference_text=reference_text,
             )
 
-            response = await self.client.gen_batch(qa_prompt)
+            question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+            response = await self.client.gen_batch(qa_prompt, model=question_model)
             return response
         except Exception:
             self.last_error = "応答の生成に失敗しました。"

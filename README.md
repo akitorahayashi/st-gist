@@ -25,7 +25,8 @@ This application is a web page summarization tool. By entering a URL, an AI anal
     ```bash
     # .env
     OLLAMA_API_ENDPOINT=http://localhost:11434
-    OLLAMA_MODEL=qwen3:0.6b
+    SUMMARY_MODEL=qwen3:0.6b
+    QUESTION_MODEL=qwen3:0.6b
     ...
     ```
 

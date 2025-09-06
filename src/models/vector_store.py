@@ -50,7 +50,7 @@ class VectorStore:
         finally:
             self.is_creating = False
 
-    def search(self, query: str, top_k=5) -> str:
+    def search(self, query: str, top_k=3) -> str:
         """Search for the most similar text chunks to the query and return the concatenated result"""
         if self.embeddings is None or not self.texts:
             return ""

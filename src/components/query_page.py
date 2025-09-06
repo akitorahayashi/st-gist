@@ -170,7 +170,7 @@ def render_query_page():
                 conversation_model.respond_to_user_message(
                     user_query,
                     summary=page_summary,
-                    retrieved_content=combined_content,
+                    reference_text=combined_content,
                 )
             )
             _, clean_response = conversation_model.extract_think_content(response)

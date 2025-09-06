@@ -112,7 +112,8 @@ class SummarizationModel(SummarizationModelProtocol):
         final_response = ""
 
         try:
-            async for chunk in self.llm_client.gen_stream(prompt):
+            summary_model = os.getenv("SUMMARY_MODEL", "qwen3:0.6b")
+            async for chunk in self.llm_client.gen_stream(prompt, model=summary_model):
                 stream_parts.append(chunk)
                 current_response = "".join(stream_parts)
                 thinking_content, summary_content = self.extract_think_content(
