@@ -60,7 +60,7 @@ class ConversationModel(ConversationModelProtocol):
         self,
         user_message: str,
         summary: str = "",
-        scraped_content: str = "",
+        retrieved_content: str = "",
     ) -> str:
         """
         Generate a response to user message with automatic state management using Web Page Q&A format.
@@ -68,7 +68,7 @@ class ConversationModel(ConversationModelProtocol):
         Args:
             user_message: The user's message to respond to
             summary: The summarization of the web page
-            scraped_content: The scraped content from the web page
+            retrieved_content: The retrieved content from vector search
 
         Returns:
             str: The AI's response
@@ -79,7 +79,7 @@ class ConversationModel(ConversationModelProtocol):
             qa_prompt = self._qa_prompt_template.safe_substitute(
                 summary=summary,
                 user_message=user_message,
-                scraped_content=scraped_content,
+                retrieved_content=retrieved_content,
             )
 
             response = await self.client.gen_batch(qa_prompt)

@@ -159,15 +159,15 @@ def render_query_page():
             relevant_content = ""
             if vector_store:
                 relevant_content = vector_store.search(user_query)
-            # If no context is retrieved, use the summary as a substitute
+            # If no context is retrieved, use a message indicating no relevant content found
             if not relevant_content:
-                relevant_content = page_summary
+                relevant_content = "質問に関連する具体的なコンテンツが見つかりませんでした。"
 
             response = asyncio.run(
                 conversation_model.respond_to_user_message(
                     user_query,
                     summary=page_summary,
-                    scraped_content=relevant_content,  # Modified here
+                    retrieved_content=relevant_content,  # Modified here
                 )
             )
             _, clean_response = conversation_model.extract_think_content(response)
