@@ -96,19 +96,25 @@ class TestConversationModel:
 
     # --- respond_to_user_message test ---
     @pytest.mark.asyncio
+    @patch.dict("os.environ", {"QUESTION_MODEL": "test-model"})
     async def test_respond_to_user_message(self, conversation_model, mock_client):
         """Test the respond_to_user_message method."""
         user_question = "User question"
         # Build the expected prompt using the model's template
         template_content = conversation_model._qa_prompt_template.template
         expected_prompt = Template(template_content).safe_substitute(
-            summary="", user_message=user_question, scraped_content=""
+            summary="",
+            user_message=user_question,
+            vector_search_content="",
+            page_content="",
         )
 
         response = await conversation_model.respond_to_user_message(user_question)
 
-        # Verify that the gen_batch method was called with the correct prompt
-        mock_client.gen_batch.assert_called_once_with(expected_prompt)
+        # Verify that the gen_batch method was called with the correct prompt and model
+        mock_client.gen_batch.assert_called_once_with(
+            expected_prompt, model="test-model"
+        )
         assert response == "AI response"
         assert not conversation_model.is_responding
 

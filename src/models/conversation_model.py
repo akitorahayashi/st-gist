@@ -16,6 +16,21 @@ class ConversationModel(ConversationModelProtocol):
         self.last_error = None
         self._qa_prompt_template = self._load_qa_prompt_template()
 
+    def _truncate_prompt(self, prompt: str, max_chars: int = 4000) -> str:
+        """
+        Truncate prompt from the end if it exceeds max_chars to preserve important context at the beginning.
+
+        Args:
+            prompt: The prompt to potentially truncate
+            max_chars: Maximum number of characters allowed (default: 4000)
+
+        Returns:
+            str: Truncated prompt if necessary
+        """
+        if len(prompt) <= max_chars:
+            return prompt
+        return prompt[:max_chars]
+
     def _load_qa_prompt_template(self) -> Template:
         """
         Load the Web Page Q&A prompt template from the static file.
@@ -42,7 +57,11 @@ class ConversationModel(ConversationModelProtocol):
         self.is_responding = True
         self.last_error = None
         try:
-            async for chunk in self.client.gen_stream(user_message):
+            truncated_message = self._truncate_prompt(user_message)
+            question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+            async for chunk in self.client.gen_stream(
+                truncated_message, model=question_model
+            ):
                 yield chunk
         except Exception as e:
             self.last_error = str(e)
@@ -54,13 +73,16 @@ class ConversationModel(ConversationModelProtocol):
         """
         Generates a complete response from the client at once.
         """
-        return await self.client.gen_batch(user_message)
+        truncated_message = self._truncate_prompt(user_message)
+        question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+        return await self.client.gen_batch(truncated_message, model=question_model)
 
     async def respond_to_user_message(
         self,
         user_message: str,
         summary: str = "",
-        scraped_content: str = "",
+        vector_search_content: str = "",
+        page_content: str = "",
     ) -> str:
         """
         Generate a response to user message with automatic state management using Web Page Q&A format.
@@ -68,7 +90,8 @@ class ConversationModel(ConversationModelProtocol):
         Args:
             user_message: The user's message to respond to
             summary: The summarization of the web page
-            scraped_content: The scraped content from the web page
+            vector_search_content: Content retrieved from vector search
+            page_content: Full page content
 
         Returns:
             str: The AI's response
@@ -79,10 +102,15 @@ class ConversationModel(ConversationModelProtocol):
             qa_prompt = self._qa_prompt_template.safe_substitute(
                 summary=summary,
                 user_message=user_message,
-                scraped_content=scraped_content,
+                vector_search_content=vector_search_content,
+                page_content=page_content,
             )
 
-            response = await self.client.gen_batch(qa_prompt)
+            truncated_qa_prompt = self._truncate_prompt(qa_prompt)
+            question_model = os.getenv("QUESTION_MODEL", "qwen3:0.6b")
+            response = await self.client.gen_batch(
+                truncated_qa_prompt, model=question_model
+            )
             return response
         except Exception:
             self.last_error = "応答の生成に失敗しました。"

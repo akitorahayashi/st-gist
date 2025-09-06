@@ -1,0 +1,127 @@
+/* Global Design System Variables */
+:root {
+    /* Primary Brand Colors */
+    --primary-color: #475569;
+    --primary-hover: #334155;
+    --primary-active: #1e293b;
+    --secondary-color: #64748b;
+    --accent-color: #0f766e;
+    
+    /* State Colors */
+    --success-color: #059669;
+    --warning-color: #d97706;
+    --error-color: #dc2626;
+    --info-color: #0ea5e9;
+    
+    /* Background Colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --bg-disabled: #9ca3af;
+    
+    /* Text Colors */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-inverse: #ffffff;
+    
+    /* Border Colors */
+    --border-light: #e2e8f0;
+    --border-medium: #cbd5e1;
+    --border-dark: #94a3b8;
+    
+    /* Shadow Definitions */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    
+    /* Border Radius */
+    --radius-none: 0;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+    --radius-full: 9999px;
+    
+    /* Spacing Scale */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    
+    /* Typography */
+    --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    
+    /* Font Weights */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    
+    /* Font Sizes */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    
+    /* Line Heights */
+    --leading-tight: 1.25;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 2;
+    
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Z-Index Scale */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+}
+
+/* Dark Mode Theme */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-tertiary: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        --border-light: #334155;
+        --border-medium: #475569;
+        --border-dark: #64748b;
+    }
+}
+
+/* Global Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Global Transitions */
+* {
+    transition: color var(--transition-base), 
+                background-color var(--transition-base), 
+                border-color var(--transition-base),
+                opacity var(--transition-base);
+}

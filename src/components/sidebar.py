@@ -9,7 +9,7 @@ def render_sidebar():
 
         if st.button(
             "🏠 New URL",
-            help="新しいURLを入力するページに戻る",
+            help="新しいサイトを分析",
             key="new_url_btn",
             use_container_width=True,
         ):
@@ -18,7 +18,7 @@ def render_sidebar():
 
         if st.button(
             "✨ New Chat",
-            help="Clear history and start a new chat",
+            help="チャットをクリア",
             key="new_chat_btn",
             use_container_width=True,
         ):
