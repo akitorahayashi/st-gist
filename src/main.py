@@ -1,4 +1,5 @@
 import os
+import sys
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -8,6 +9,8 @@ from src.components.query_page import render_query_page
 from src.components.url_input_page import render_url_input_page
 from src.models import ConversationModel, ScrapingModel, SummarizationModel, VectorStore
 from src.router import AppRouter, Page
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 # Load environment variables
 load_dotenv()
