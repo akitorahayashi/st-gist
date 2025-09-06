@@ -22,9 +22,9 @@ def render_url_input_form():
     css_files = [
         "src/static/css/root.css",
         "src/static/css/url_input_page.css",
-        "src/static/css/recommendation-buttons.css"
+        "src/static/css/recommendation-buttons.css",
     ]
-    
+
     for css_file in css_files:
         try:
             with open(css_file, "r", encoding="utf-8") as f:
@@ -90,13 +90,13 @@ def render_url_input_form():
                 scraping_model.last_error = str(e)
 
         st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)
-        
+
         # メインループでのフラグ処理
         if st.session_state.get("should_start_scraping", False):
             # フラグをクリアして、処理を開始
             st.session_state.should_start_scraping = False
             target_url = st.session_state.get("target_url_to_scrape", "")
-            
+
             # 処理開始
             app_router.set_target_url(target_url)
             scraping_model.is_scraping = True
@@ -104,18 +104,20 @@ def render_url_input_form():
 
         # おすすめのサイト
         st.markdown("### おすすめのサイト")
-        
+
         # Check if scraping is in progress to disable buttons
         is_disabled = scraping_model.is_scraping
-        disabled_class = "disabled" if is_disabled else ""
-        
+
         # JavaScript for enhanced link protection
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <script>
         window.processingInProgress = {str(is_disabled).lower()};
         </script>
-        """, unsafe_allow_html=True)
-        
+        """,
+            unsafe_allow_html=True,
+        )
+
         col1, col2, col3 = st.columns(3)
         with col1:
             if is_disabled:
