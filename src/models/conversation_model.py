@@ -80,6 +80,21 @@ class ConversationModel(ConversationModelProtocol):
         question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
         return await self.client.gen_batch(truncated_message, model=question_model)
 
+    def _format_chat_history(self) -> str:
+        """
+        self.messagesをLLMプロンプト用の文字列にフォーマットする
+        """
+        if not self.messages:
+            return ""
+
+        # 最後のメッセージ（現在のユーザーの質問）は除く
+        history_str = ""
+        # 2つ前までのメッセージを履歴として含める
+        for msg in self.messages[:-1]:
+            role = "ユーザー" if msg["role"] == "user" else "AI"
+            history_str += f'{role}: {msg["content"]}\n'
+        return history_str.strip()
+
     async def respond_to_user_message(
         self,
         user_message: str,
@@ -88,23 +103,18 @@ class ConversationModel(ConversationModelProtocol):
         page_content: str = "",
     ) -> str:
         """
-        Generate a response to user message with automatic state management using Web Page Q&A format.
-
-        Args:
-            user_message: The user's message to respond to
-            summary: The summarization of the web page
-            vector_search_content: Content retrieved from vector search
-            page_content: Full page content
-
-        Returns:
-            str: The AI's response
+        WebページのQ&A形式を使用して、自動状態管理でユーザーメッセージへの応答を生成します。
         """
         self.is_responding = True
         try:
-            # Build the Web Page Q&A prompt using the loaded template
+            # 会話履歴をフォーマットする
+            chat_history = self._format_chat_history()
+
+            # WebページのQ&Aプロンプトを構築する
             qa_prompt = self._qa_prompt_template.safe_substitute(
                 summary=summary,
                 user_message=user_message,
+                chat_history=chat_history,  # chat_historyを追加
                 vector_search_content=vector_search_content,
                 page_content=page_content,
             )
