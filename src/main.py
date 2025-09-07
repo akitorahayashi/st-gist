@@ -8,9 +8,9 @@ if project_root not in sys.path:
 import streamlit as st  # noqa: E402
 from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient  # noqa: E402
 
-from src.components.query_page import render_query_page  # noqa: E402
-from src.components.sidebar import render_sidebar  # noqa: E402
-from src.components.url_input_page import render_url_input_page  # noqa: E402
+from src.components.query_page.query_page import render_query_page  # noqa: E402
+from src.components.sidebar.sidebar import render_sidebar  # noqa: E402
+from src.components.url_input.url_input_page import render_url_input_page  # noqa: E402
 from src.models import (  # noqa: E402
     ConversationModel,
     ScrapingModel,

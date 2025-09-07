@@ -20,9 +20,9 @@ def render_url_input_form():
 
     # Load CSS for URL input page styling
     css_files = [
-        "src/static/css/root.css",
+        "src/static/css/base/root.css",
         "src/static/css/url_input_page.css",
-        "src/static/css/custom-button.css",
+        "src/static/css/base/custom-button.css",
     ]
 
     for css_file in css_files:

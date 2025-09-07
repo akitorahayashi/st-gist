@@ -26,7 +26,6 @@ dev = [
     "pytest>=8.4.1",
     "black>=25.1.0",
     "ruff>=0.12.11",
-    "ipython>=9.5.0",
     "selenium>=4.0.0",
     "python-dotenv>=1.0.0",
     "requests>=2.31.0",
