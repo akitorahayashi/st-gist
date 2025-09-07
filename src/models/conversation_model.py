@@ -134,7 +134,9 @@ class ConversationModel(ConversationModelProtocol):
             )
 
             # 会話履歴の最大長を計算
-            history_max_length = max(0, CONTEXT_MAX_LENGTH - len(truncated_user_message))
+            history_max_length = max(
+                0, CONTEXT_MAX_LENGTH - len(truncated_user_message)
+            )
 
             # 会話履歴をフォーマットする
             chat_history = self._format_chat_history(max_length=history_max_length)
