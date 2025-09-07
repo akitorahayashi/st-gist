@@ -101,7 +101,7 @@ class TestConversationModel:
         conversation_model.add_user_message("How are you?")
         # The last message is not included in the history
         history = conversation_model._format_chat_history()
-        expected_history = "ユーザー: Hello\nAI: Hi there"
+        expected_history = "ユーザー: Hello\nあなた: Hi there"
         assert history == expected_history
 
     def test_format_chat_history_empty(self, conversation_model):

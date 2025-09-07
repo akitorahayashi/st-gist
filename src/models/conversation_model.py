@@ -84,11 +84,11 @@ class ConversationModel(ConversationModelProtocol):
         """
         ユーザーメッセージが長すぎる場合に末尾をカットし、メッセージを追加する。
         """
-        if len(user_message) > max_length:
-            return (
-                user_message[:max_length] + "\n（質問が長すぎるためカットしました...）"
-            )
-        return user_message
+        suffix = "\n（質問が長すぎるためカットしました...）"
+        if len(user_message) <= max_length:
+            return user_message
+        keep = max(0, max_length - len(suffix))
+        return user_message[:keep] + suffix
 
     def _format_chat_history(self, max_length: int = 1500) -> str:
         """
@@ -102,7 +102,7 @@ class ConversationModel(ConversationModelProtocol):
         current_length = 0
         # 新しいメッセージから遡って履歴を構築 (最後のユーザーメッセージは除く)
         for msg in reversed(self.messages[:-1]):
-            role = "ユーザー" if msg["role"] == "user" else "あなた (AI)"
+            role = "ユーザー" if msg["role"] == "user" else "あなた"
             formatted_message = f'{role}: {msg["content"]}\n'
 
             # メッセージを追加すると最大長を超える場合はループを終了
@@ -126,7 +126,7 @@ class ConversationModel(ConversationModelProtocol):
         """
         self.is_responding = True
         try:
-            CONTEXT_MAX_LENGTH = 1500
+            CONTEXT_MAX_LENGTH = int(st.secrets.get("CONTEXT_MAX_LENGTH", 1500))
 
             # ユーザーメッセージが長すぎる場合はカット
             truncated_user_message = self._truncate_user_message(
@@ -134,7 +134,7 @@ class ConversationModel(ConversationModelProtocol):
             )
 
             # 会話履歴の最大長を計算
-            history_max_length = CONTEXT_MAX_LENGTH - len(truncated_user_message)
+            history_max_length = max(0, CONTEXT_MAX_LENGTH - len(truncated_user_message))
 
             # 会話履歴をフォーマットする
             chat_history = self._format_chat_history(max_length=history_max_length)
