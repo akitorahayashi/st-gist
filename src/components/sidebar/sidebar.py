@@ -36,6 +36,8 @@ def render_sidebar(page: Page = None):
         elif current_page == Page.INPUT:
             # URL input page sidebar options
 
+            st.write("任意のウェブサイトのURLをコピーして、テキストボックスに貼り付けてください。")
+
             # 🔥 おすすめの記事
             st.markdown("### 🔥 おすすめの記事")
             st.link_button(
