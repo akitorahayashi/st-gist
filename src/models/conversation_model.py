@@ -80,20 +80,39 @@ class ConversationModel(ConversationModelProtocol):
         question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
         return await self.client.gen_batch(truncated_message, model=question_model)
 
-    def _format_chat_history(self) -> str:
+    def _truncate_user_message(self, user_message: str, max_length: int = 1500) -> str:
         """
-        self.messagesをLLMプロンプト用の文字列にフォーマットする
+        ユーザーメッセージが長すぎる場合に末尾をカットし、メッセージを追加する。
+        """
+        if len(user_message) > max_length:
+            return (
+                user_message[:max_length] + "\n（質問が長すぎるためカットしました...）"
+            )
+        return user_message
+
+    def _format_chat_history(self, max_length: int = 1500) -> str:
+        """
+        self.messagesをLLMプロンプト用の文字列にフォーマットする。
+        古いメッセージから削除して、指定された最大長を超えないようにする。
         """
         if not self.messages:
             return ""
 
-        # 最後のメッセージ（現在のユーザーの質問）は除く
-        history_str = ""
-        # 2つ前までのメッセージを履歴として含める
-        for msg in self.messages[:-1]:
-            role = "ユーザー" if msg["role"] == "user" else "AI"
-            history_str += f'{role}: {msg["content"]}\n'
-        return history_str.strip()
+        history = []
+        current_length = 0
+        # 新しいメッセージから遡って履歴を構築 (最後のユーザーメッセージは除く)
+        for msg in reversed(self.messages[:-1]):
+            role = "ユーザー" if msg["role"] == "user" else "あなた (AI)"
+            formatted_message = f'{role}: {msg["content"]}\n'
+
+            # メッセージを追加すると最大長を超える場合はループを終了
+            if current_length + len(formatted_message) > max_length:
+                break
+
+            history.insert(0, formatted_message)
+            current_length += len(formatted_message)
+
+        return "".join(history).strip()
 
     async def respond_to_user_message(
         self,
@@ -107,19 +126,31 @@ class ConversationModel(ConversationModelProtocol):
         """
         self.is_responding = True
         try:
+            CONTEXT_MAX_LENGTH = 1500
+
+            # ユーザーメッセージが長すぎる場合はカット
+            truncated_user_message = self._truncate_user_message(
+                user_message, max_length=CONTEXT_MAX_LENGTH
+            )
+
+            # 会話履歴の最大長を計算
+            history_max_length = CONTEXT_MAX_LENGTH - len(truncated_user_message)
+
             # 会話履歴をフォーマットする
-            chat_history = self._format_chat_history()
+            chat_history = self._format_chat_history(max_length=history_max_length)
 
             # WebページのQ&Aプロンプトを構築する
             qa_prompt = self._qa_prompt_template.safe_substitute(
                 summary=summary,
-                user_message=user_message,
-                chat_history=chat_history,  # chat_historyを追加
+                user_message=truncated_user_message,
+                chat_history=chat_history,
                 vector_search_content=vector_search_content,
                 page_content=page_content,
             )
 
+            # プロンプト全体の最終的な切り詰め（安全策）
             truncated_qa_prompt = self._truncate_prompt(qa_prompt)
+
             question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
             response = await self.client.gen_batch(
                 truncated_qa_prompt, model=question_model
