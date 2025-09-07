@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - name: Create .env file from example
+      - name: Create secrets file from example
         run: cp .streamlit/secrets.example.toml .streamlit/secrets.toml
 
       - name: Run tests
