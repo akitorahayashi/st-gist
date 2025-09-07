@@ -94,7 +94,7 @@ def initialize_session():
     if "scraping_model" not in st.session_state:
         st.session_state.scraping_model = ScrapingModel()
 
-    # Initialize vector store (lazy initialization - model loads only when needed)
+    # Initialize vector store and load the embedding model
     if "vector_store" not in st.session_state:
         st.session_state.vector_store = VectorStore()
 

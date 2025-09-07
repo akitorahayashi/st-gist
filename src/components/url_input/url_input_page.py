@@ -91,6 +91,9 @@ def render_url_input_form():
 
         st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)
 
+        if st.secrets.get("DEBUG"):
+            st.info("現在、デバッグモードのため、Mockが使用されています。")
+
         # メインループでのフラグ処理
         if st.session_state.get("should_start_scraping", False):
             # フラグをクリアして、処理を開始

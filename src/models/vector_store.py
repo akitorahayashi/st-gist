@@ -1,5 +1,6 @@
 import numpy as np
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from sentence_transformers import SentenceTransformer
 
 
 class VectorStore:
@@ -9,20 +10,11 @@ class VectorStore:
 
     def __init__(self, model_name="all-MiniLM-L6-v2"):
         self.model_name = model_name
-        self.model = None
+        self.model = SentenceTransformer(self.model_name)
         self.texts = []
         self.embeddings = None
         self.is_creating = False
         self.last_error = None
-        self.is_initialized = False
-
-    def _ensure_initialized(self):
-        """Initialize the model if not already initialized"""
-        if not self.is_initialized:
-            from sentence_transformers import SentenceTransformer
-
-            self.model = SentenceTransformer(self.model_name)
-            self.is_initialized = True
 
     def create_embeddings(self, text: str, chunk_size=1000, chunk_overlap=200):
         """
@@ -33,7 +25,6 @@ class VectorStore:
             chunk_size: Size of each chunk
             chunk_overlap: Overlap between chunks
         """
-        self._ensure_initialized()
         self.is_creating = True
         self.last_error = None
         try:
@@ -54,7 +45,6 @@ class VectorStore:
         if self.embeddings is None or not self.texts:
             return ""
 
-        self._ensure_initialized()
         query_vec = self.model.encode([query])[0]
 
         # Calculate cosine similarity using numpy
