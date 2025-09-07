@@ -1,4 +1,3 @@
-import pyperclip
 import streamlit as st
 
 from src.router import Page
@@ -37,51 +36,26 @@ def render_sidebar(page: Page = None):
         elif current_page == Page.INPUT:
             # URL input page sidebar options
 
-            # 🔥 おすすめの記事セクションを追加
+            # 🔥 おすすめの記事
             st.markdown("### 🔥 おすすめの記事")
-            if st.button(
+            st.link_button(
                 "自己学習AI SEAL",
+                url="https://syncedreview.com/2025/06/16/mit-researchers-unveil-seal-a-new-step-towards-self-improving-ai/",
                 help="自己学習AI、SEAL",
                 use_container_width=True,
-                key="rec_seal_btn",
-            ):
-                pyperclip.copy(
-                    "https://syncedreview.com/2025/06/16/mit-researchers-unveil-seal-a-new-step-towards-self-improving-ai/"
-                )
-                st.session_state.copied_article = "自己学習AI、SEAL"
-                st.rerun()
-
-            if st.button(
+            )
+            st.link_button(
                 "トークン推論の先",
+                url="https://example.com/article2",
                 help="トークン推論の先",
                 use_container_width=True,
-                key="token_infer_btn1",
-            ):
-                pyperclip.copy("https://example.com/article2")
-                st.session_state.copied_article = "トークン推論の先"
-                st.rerun()
-
-            if st.button(
+            )
+            st.link_button(
                 "LLM自動故障帰因の研究",
+                url="https://syncedreview.com/2025/08/14/which-agent-causes-task-failures-and-whenresearchers-from-psu-and-duke-explores-automated-failure-attribution-of-llm-multi-agent-systems/",
                 help="LLM自動故障帰因の研究",
                 use_container_width=True,
-                key="token_infer_btn2",
-            ):
-                pyperclip.copy(
-                    "https://syncedreview.com/2025/08/14/which-agent-causes-task-failures-and-whenresearchers-from-psu-and-duke-explores-automated-failure-attribution-of-llm-multi-agent-systems/"
-                )
-                st.session_state.copied_article = "LLM自動故障帰因の研究"
-                st.rerun()
-
-            # initialize copied_article state
-            if "copied_article" not in st.session_state:
-                st.session_state.copied_article = None
-
-            # show info if an article was just copied
-            if st.session_state.copied_article:
-                st.info(
-                    f"{st.session_state.copied_article}の記事のリンクをコピーしました"
-                )
+            )
 
             st.markdown("### 📚 まとめサイト")
 
