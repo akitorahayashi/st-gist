@@ -100,3 +100,16 @@ intg-test: ## Run integration tests
 e2e-test: ## Run end-to-end tests
 	@echo "Running end-to-end tests..."
 	@$(PYTHON) -m pytest tests/e2e -s
+
+# ==============================================================================
+# CLEANUP
+# ==============================================================================
+
+.PHONY: clean
+clean: ## Remove __pycache__ and .venv to make project lightweight
+	@echo "🧹 Cleaning up project..."
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@rm -rf .venv
+	@rm -rf .pytest_cache
+	@rm -rf .ruff_cache
+	@echo "✅ Cleanup completed"
