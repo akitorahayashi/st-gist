@@ -20,9 +20,7 @@ def render_query_page():
 
     # Load CSS for query page styling
     try:
-        with open(
-            "src/components/query_page/query_page.css", "r", encoding="utf-8"
-        ) as f:
+        with open("src/static/css/query_page.css", "r", encoding="utf-8") as f:
             css_content = f.read()
         st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
     except FileNotFoundError:

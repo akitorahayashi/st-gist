@@ -21,7 +21,7 @@ def render_url_input_form():
     # Load CSS for URL input page styling
     css_files = [
         "src/static/css/base/root.css",
-        "src/components/url_input/url_input_page.css",
+        "src/static/css/url_input_page.css",
         "src/static/css/base/custom-button.css",
     ]
 
