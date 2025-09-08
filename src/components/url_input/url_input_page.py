@@ -5,9 +5,9 @@ def render_url_input_page():
     """Render complete URL input page with header, description, form, and footer"""
     # Removed unused variable 'app_router'
 
-    st.title("Gist")
+    st.title("💎 Gist")
     st.write(
-        "URLを入力すると、そのページの内容を分析・要約し、チャットボットでの質問ができるようになります。"
+        "URLを入力すると、そのページの内容を分析・要約し、チャットボットにページに関する質問ができるようになります。"
     )
 
     render_url_input_form()
@@ -34,39 +34,20 @@ def render_url_input_form():
             pass  # CSS file not found, continue without styling
 
     with st.container():
-        # --- 処理中の場合のロジック ---
-        if scraping_model.is_scraping:
-            target_url = st.session_state.get("target_url", "")
+        # URL入力フィールド(処理中は無効化)
+        target_url = st.session_state.get("target_url", "")
+        url_value = (
+            target_url
+            if scraping_model.is_scraping
+            else st.session_state.get("url_input", "")
+        )
 
-            # 処理中のUI表示
-            st.text_input(
-                "URL", value=target_url, disabled=True, label_visibility="collapsed"
-            )
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.button(
-                "ページの内容を取得中...", use_container_width=True, disabled=True
-            )
-
-            # 実際のスクレイピング処理
-            try:
-                scraping_model.scrape(target_url)
-
-                # スクレイピング完了後、遷移前にembeddingを作成
-                vector_store = st.session_state.get("vector_store")
-                if vector_store and scraping_model.content:
-                    vector_store.create_embeddings(scraping_model.content)
-
-                app_router.go_to_chat_page()
-                st.rerun()
-            except Exception:
-                st.rerun()
-            return
-
-        # --- 待機中の場合のUI描画 ---
         st.text_input(
-            "URLを入力してください",
+            "URLを入力してください" if not scraping_model.is_scraping else "URL",
             placeholder="https://example.com",
+            value=url_value,
             key="url_input",
+            disabled=scraping_model.is_scraping,
             label_visibility="collapsed",
         )
 
@@ -89,7 +70,41 @@ def render_url_input_form():
             except ValueError as e:
                 scraping_model.last_error = str(e)
 
-        st.button("要約を開始", use_container_width=True, on_click=on_summarize_click)
+        # ボタンのテキストと状態を動的に設定
+        button_text = (
+            "ページの内容を取得中..." if scraping_model.is_scraping else "要約を開始"
+        )
+        button_disabled = scraping_model.is_scraping
+
+        st.button(
+            button_text,
+            use_container_width=True,
+            disabled=button_disabled,
+            on_click=on_summarize_click if not scraping_model.is_scraping else None,
+        )
+
+        # 処理中の場合のスクレイピング処理
+        if scraping_model.is_scraping:
+            target_url = st.session_state.get("target_url", "")
+            if not target_url:
+                scraping_model.is_scraping = False
+                scraping_model.last_error = "URLが未設定です。もう一度お試しください。"
+                st.rerun()
+                return
+            try:
+                scraping_model.scrape(target_url)
+
+                # スクレイピング完了後、遷移前にembeddingを作成
+                vector_store = st.session_state.get("vector_store")
+                if vector_store and scraping_model.content:
+                    vector_store.create_embeddings(scraping_model.content)
+
+                app_router.go_to_chat_page()
+                st.rerun()
+            except Exception as e:
+                scraping_model.is_scraping = False
+                scraping_model.last_error = f"スクレイピングに失敗しました: {e}"
+                st.rerun()
 
         if st.secrets.get("DEBUG"):
             st.info("現在、デバッグモードのため、Mockが使用されています。")

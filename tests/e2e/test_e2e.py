@@ -10,7 +10,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 
-
 class TestE2E:
     """End-to-end tests that verify the actual site functionality"""
 

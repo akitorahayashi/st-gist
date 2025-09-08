@@ -1,5 +1,6 @@
-import toml
 import pytest
+import toml
+
 
 @pytest.fixture
 def secrets():
