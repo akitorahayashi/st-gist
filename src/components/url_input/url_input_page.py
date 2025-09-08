@@ -107,7 +107,7 @@ def render_url_input_form():
                 st.rerun()
 
         if st.secrets.get("DEBUG"):
-            st.info("現在、デバッグモードのため、Mockが使用されています。")
+            st.info("現在Mockが使用されています。")
 
         # メインループでのフラグ処理
         if st.session_state.get("should_start_scraping", False):
