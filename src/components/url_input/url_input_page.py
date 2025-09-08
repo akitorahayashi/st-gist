@@ -34,7 +34,7 @@ def render_url_input_form():
             pass  # CSS file not found, continue without styling
 
     with st.container():
-        # URL入力フィールド（処理中は無効化）
+        # URL入力フィールド(処理中は無効化)
         target_url = st.session_state.get("target_url", "")
         url_value = (
             target_url
@@ -86,6 +86,11 @@ def render_url_input_form():
         # 処理中の場合のスクレイピング処理
         if scraping_model.is_scraping:
             target_url = st.session_state.get("target_url", "")
+            if not target_url:
+                scraping_model.is_scraping = False
+                scraping_model.last_error = "URLが未設定です。もう一度お試しください。"
+                st.rerun()
+                return
             try:
                 scraping_model.scrape(target_url)
 
@@ -96,7 +101,9 @@ def render_url_input_form():
 
                 app_router.go_to_chat_page()
                 st.rerun()
-            except Exception:
+            except Exception as e:
+                scraping_model.is_scraping = False
+                scraping_model.last_error = f"スクレイピングに失敗しました: {e}"
                 st.rerun()
 
         if st.secrets.get("DEBUG"):
