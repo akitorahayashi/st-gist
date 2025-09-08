@@ -84,12 +84,12 @@ test: unit-test intg-test build-test e2e-test ## Run the full test suite
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
-	@$(PYTHON) -m pytest tests/unit -v -s
+	@PYTHONPATH=. $(PYTHON) -m pytest tests/unit -v -s
 
 .PHONY: build-test
 build-test: ## Run build tests
 	@echo "Running build tests..."
-	@$(PYTHON) -m pytest tests/build -s
+	@PYTHONPATH=. $(PYTHON) -m pytest tests/build -s
 
 .PHONY: intg-test
 intg-test: ## Run integration tests
@@ -99,7 +99,7 @@ intg-test: ## Run integration tests
 .PHONY: e2e-test
 e2e-test: ## Run end-to-end tests
 	@echo "Running end-to-end tests..."
-	@$(PYTHON) -m pytest tests/e2e -s
+	@PYTHONPATH=. $(PYTHON) -m pytest tests/e2e -s
 
 # ==============================================================================
 # CLEANUP

@@ -9,15 +9,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from tests.utils import load_secrets
 
 
 class TestE2E:
     """End-to-end tests that verify the actual site functionality"""
 
-    def test_streamlit_app_loads_without_module_errors(self):
+    def test_streamlit_app_loads_without_module_errors(self, secrets):
         """Test that the Streamlit app loads completely without module import errors"""
-        secrets = load_secrets()
         test_port = secrets.get("TEST_PORT", 8502)
         host_ip = secrets.get("HOST_IP", "localhost")
 
@@ -118,10 +116,10 @@ class TestE2E:
                 process.kill()
                 process.wait()
 
-    def test_app_functionality_basic_interaction(self):
+    def test_app_functionality_basic_interaction(self, secrets):
         """Test basic functionality and user interaction without errors"""
-        test_port = os.getenv("TEST_PORT", "8502")
-        host_ip = os.getenv("HOST_IP", "localhost")
+        test_port = secrets.get("TEST_PORT", "8502")
+        host_ip = secrets.get("HOST_IP", "localhost")
 
         project_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

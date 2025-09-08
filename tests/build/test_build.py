@@ -4,17 +4,14 @@ import time
 
 import requests
 
-from tests.utils import load_secrets
 
 
 class TestBuild:
 
-    def test_streamlit_server_startup(self):
+    def test_streamlit_server_startup(self, secrets):
         """Test that Streamlit server can start and respond to requests"""
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         app_path = os.path.join(project_root, "src", "main.py")
-        
-        secrets = load_secrets()
         host_ip = secrets.get("HOST_IP", "localhost")
         test_port = secrets.get("TEST_PORT", 8502)
 

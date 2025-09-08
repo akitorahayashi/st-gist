@@ -1,6 +1,7 @@
 import toml
+import pytest
 
-
-def load_secrets():
+@pytest.fixture
+def secrets():
     with open(".streamlit/secrets.toml", "r") as f:
         return toml.load(f)

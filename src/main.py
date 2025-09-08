@@ -28,7 +28,7 @@ def load_model(model_class, _client):
 
 st.set_page_config(
     page_title="Gist",
-    page_icon="📝",
+    page_icon="💎",
     # "centered"/"wide"
     layout="centered",
     # "auto"/"expanded"/"collapsed"
