@@ -50,7 +50,7 @@ def render_sidebar(page: Page = None):
             )
             st.link_button(
                 "トークン推論の先",
-                url="https://example.com/article2",
+                url="https://syncedreview.com/2024/12/17/self-evolving-prompts-redefining-ai-alignment-with-deepmind-chicago-us-eva-framework-15/",
                 help="トークン推論の先",
                 use_container_width=True,
             )
