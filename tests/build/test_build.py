@@ -5,7 +5,6 @@ import time
 import requests
 
 
-
 class TestBuild:
 
     def test_streamlit_server_startup(self, secrets):
