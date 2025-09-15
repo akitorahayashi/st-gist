@@ -1,5 +1,7 @@
 from typing import AsyncGenerator, Protocol
 
+from src.schemas import Message
+
 
 class ConversationModelProtocol(Protocol):
     """
@@ -30,7 +32,7 @@ class ConversationModelProtocol(Protocol):
         """
         ...
 
-    async def respond_to_user_message(self, user_message: str) -> str:
+    async def respond_to_user_message(self, user_message: str) -> Message:
         """
         Generate a response to user message with automatic state management.
 
@@ -38,7 +40,7 @@ class ConversationModelProtocol(Protocol):
             user_message: The user's message to respond to
 
         Returns:
-            str: The AI's response
+            Message: The AI's response with think/content fields
         """
         ...
 
@@ -72,18 +74,6 @@ class ConversationModelProtocol(Protocol):
 
         Returns:
             bool: True if AI should respond
-        """
-        ...
-
-    def extract_think_content(self, text: str) -> tuple[str, str]:
-        """
-        Extract think content from text and return (thinking_content, remaining_text).
-
-        Args:
-            text: Input text that may contain <think> tags
-
-        Returns:
-            tuple of (thinking_content, text_without_think_tags)
         """
         ...
 

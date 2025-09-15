@@ -11,8 +11,7 @@
 # Default target when 'make' is run without arguments
 .DEFAULT_GOAL := help
 
-# Specify the Python executable and main Streamlit file name
-PYTHON := ./.venv/bin/python
+# Specify the main Streamlit file name
 STREAMLIT_APP_FILE := ./src/main.py
 
 # ==============================================================================
@@ -48,7 +47,6 @@ setup: ## Project initial setup: install dependencies and create secrets.toml fi
 # ==============================================================================
 # APPLICATION
 # ==============================================================================
-
 .PHONY: run
 run: ## Launch the Streamlit application with development port
 	@if [ ! -f .streamlit/secrets.toml ]; then \
@@ -56,50 +54,49 @@ run: ## Launch the Streamlit application with development port
 		exit 1; \
 	fi
 	@echo "🚀 Starting Streamlit app on development port..."
-	@PYTHONPATH=. streamlit run $(STREAMLIT_APP_FILE) --server.port $(shell grep DEV_PORT .streamlit/secrets.toml | cut -d'=' -f2 | xargs)
+	@uv run streamlit run $(STREAMLIT_APP_FILE) \
+		--server.port $(shell grep DEV_PORT .streamlit/secrets.toml | cut -d'=' -f2 | xargs)
 
 # ==============================================================================
 # CODE QUALITY
 # ==============================================================================
-
 .PHONY: format
 format: ## Automatically format code using Black and Ruff
 	@echo "🎨 Formatting code with black and ruff..."
-	@black .
-	@ruff check . --fix
+	@uv run black .
+	@uv run ruff check . --fix
 
 .PHONY: lint
 lint: ## Perform static code analysis (check) using Black and Ruff
 	@echo "🔬 Linting code with black and ruff..."
-	@black --check .
-	@ruff check .
+	@uv run black --check .
+	@uv run ruff check .
 
 # ==============================================================================
 # TESTING
 # ==============================================================================
-
 .PHONY: test
-test: unit-test intg-test build-test e2e-test ## Run the full test suite
+test: unit-test build-test intg-test ## Run the full test suite
 
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
-	@PYTHONPATH=. $(PYTHON) -m pytest tests/unit -v -s
+	@uv run pytest tests/unit -v -s
 
 .PHONY: build-test
 build-test: ## Run build tests
 	@echo "Running build tests..."
-	@PYTHONPATH=. $(PYTHON) -m pytest tests/build -s
+	@uv run pytest tests/build -s
 
 .PHONY: intg-test
 intg-test: ## Run integration tests
 	@echo "Running integration tests..."
-	@PYTHONPATH=. $(PYTHON) -m pytest tests/intg -v -s
+	@uv run pytest tests/intg -v -s
 
 .PHONY: e2e-test
 e2e-test: ## Run end-to-end tests
 	@echo "Running end-to-end tests..."
-	@PYTHONPATH=. $(PYTHON) -m pytest tests/e2e -s
+	@uv run pytest tests/e2e -s
 
 # ==============================================================================
 # CLEANUP

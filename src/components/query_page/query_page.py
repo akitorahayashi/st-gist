@@ -16,7 +16,6 @@ def render_query_page():
     # Get models from session_state
     summarization_model = st.session_state.get("summarization_model")
     scraping_model = st.session_state.get("scraping_model")
-    vector_store = st.session_state.get("vector_store")
 
     # Load CSS for query page styling
     try:
@@ -57,8 +56,7 @@ def render_query_page():
     # Display summary content
     if page_summary.strip():
         st.markdown("### 📝 要約コンテンツ")
-        _, clean_summary = conversation_model.extract_think_content(page_summary)
-        st.markdown(clean_summary)
+        st.markdown(page_summary)
 
     # Handle stream generation from scraped content - only run once
     if (
@@ -98,12 +96,7 @@ def render_query_page():
                             if summary_content.strip():
                                 with summary_placeholder.container():
                                     st.markdown("### 📝 要約コンテンツ")
-                                    _, clean_summary_content = (
-                                        conversation_model.extract_think_content(
-                                            summary_content
-                                        )
-                                    )
-                                    st.markdown(clean_summary_content)
+                                    st.markdown(summary_content)
 
                             # Small delay to allow UI updates
                             import time
@@ -149,26 +142,27 @@ def render_query_page():
             user_query = conversation_model.messages[-1]["content"]
             # Get page content from scraping model
             page_content = scraping_model.content if scraping_model else ""
-            # Retrieve relevant context from vector search
-            searched_content = ""
-            if vector_store:
-                searched_content = vector_store.search(user_query)
 
-            response = asyncio.run(
+            ai_message_object = asyncio.run(
                 conversation_model.respond_to_user_message(
                     user_query,
                     summary=page_summary,
-                    vector_search_content=searched_content,
                     page_content=page_content,
                 )
             )
-            _, clean_response = conversation_model.extract_think_content(response)
-            conversation_model.add_ai_message(clean_response)
+
+            # Display thinking process if available
+            if ai_message_object.think and ai_message_object.think.strip():
+                st.markdown("### 🤔 AI思考過程")
+                with st.expander("思考プロセス", expanded=True):
+                    st.markdown(ai_message_object.think)
+
+            # Add only the content part to chat history (think is handled separately)
+            conversation_model.add_ai_message(ai_message_object.content or "")
         except Exception as e:
             error_message = f"エラーが発生しました: {e}"
             conversation_model.last_error = error_message
-            _, clean_error = conversation_model.extract_think_content(error_message)
-            conversation_model.add_ai_message(clean_error)
+            conversation_model.add_ai_message(error_message)
         finally:
             conversation_model.is_responding = False
             st.rerun()

@@ -4,14 +4,21 @@ from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 import pytest
 
 from src.models.conversation_model import ConversationModel
+from src.schemas import Message, MessageRole
 
 
 @pytest.fixture
 def mock_client():
     """Fixture for a mocked client."""
     client = MagicMock()
-    # Mock the async method
-    client.gen_batch = AsyncMock(return_value="AI response")
+    # Mock the v2 async method with proper schema
+    mock_response = MagicMock()
+    mock_choice = MagicMock()
+    mock_message = MagicMock()
+    mock_message.content = "AI response"
+    mock_choice.message = mock_message
+    mock_response.choices = [mock_choice]
+    client.generate = AsyncMock(return_value=mock_response)
     return client
 
 
@@ -60,40 +67,6 @@ class TestConversationModel:
         conversation_model.is_responding = True
         assert conversation_model.should_respond() is False
 
-    # --- extract_think_content tests ---
-    @pytest.mark.parametrize(
-        "text, expected_think, expected_clean",
-        [
-            (
-                "<think>This is a thought.</think>This is the response.",
-                "This is a thought.",
-                "This is the response.",
-            ),
-            (
-                "No think tags here.",
-                "",
-                "No think tags here.",
-            ),
-            (
-                "<think>First thought.</think>Some text.<think>Second thought.</think>",
-                "First thought.\nSecond thought.",
-                "Some text.",
-            ),
-            (
-                "Text without closing tag <think>should not break",
-                "",
-                "Text without closing tag <think>should not break",
-            ),
-        ],
-    )
-    def test_extract_think_content(
-        self, conversation_model, text, expected_think, expected_clean
-    ):
-        """Test the extraction of content from <think> tags."""
-        thinking_content, cleaned_text = conversation_model.extract_think_content(text)
-        assert thinking_content == expected_think
-        assert cleaned_text == expected_clean
-
     def test_format_chat_history(self, conversation_model):
         """Test the _format_chat_history method."""
         conversation_model.add_user_message("Hello")
@@ -127,23 +100,27 @@ class TestConversationModel:
         mock_secrets.get.side_effect = get_secret
 
         user_question = "User question"
-        # Build the expected prompt using the model's template
+        # Build the expected system prompt using the model's template
         template_content = conversation_model._qa_prompt_template.template
-        expected_prompt = Template(template_content).safe_substitute(
+        expected_system_prompt = Template(template_content).safe_substitute(
             summary="",
-            user_message=user_question,
-            chat_history="",
-            vector_search_content="",
             page_content="",
         )
 
+        # Build expected messages array with system prompt and user message
+        expected_messages = [
+            Message(role=MessageRole.SYSTEM, content=expected_system_prompt),
+            Message(role=MessageRole.USER, content=user_question),
+        ]
+
         response = await conversation_model.respond_to_user_message(user_question)
 
-        # Verify that the gen_batch method was called with the correct prompt and model
-        mock_client.gen_batch.assert_called_once_with(
-            expected_prompt, model="test-model"
+        # Verify that the generate method was called with the correct messages and model
+        mock_client.generate.assert_called_once_with(
+            messages=expected_messages, model_name="test-model", stream=False
         )
-        assert response == "AI response"
+        # Now returns a Message object instead of string
+        assert response.content == "AI response"
         assert not conversation_model.is_responding
 
     # --- _load_qa_prompt_template tests ---

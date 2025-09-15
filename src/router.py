@@ -62,10 +62,6 @@ class AppRouter:
         if "conversation_model" in st.session_state:
             st.session_state.conversation_model.reset()
 
-        # Reset vector store if exists
-        if "vector_store" in st.session_state:
-            st.session_state.vector_store.reset()
-
         # Reset summarization model if exists
         if "summarization_model" in st.session_state:
             st.session_state.summarization_model.reset()

@@ -6,8 +6,9 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 import streamlit as st  # noqa: E402
-from sdk.olm_api_client import MockOllamaApiClient, OllamaApiClient  # noqa: E402
 
+from dev.mocks.clients import MockOlmClientV2  # noqa: E402
+from src.clients import OlmApiClientV2, OlmLocalClientV2  # noqa: E402
 from src.components.query_page.query_page import render_query_page  # noqa: E402
 from src.components.sidebar.sidebar import render_sidebar  # noqa: E402
 from src.components.url_input.url_input_page import render_url_input_page  # noqa: E402
@@ -15,7 +16,6 @@ from src.models import (  # noqa: E402
     ConversationModel,
     ScrapingModel,
     SummarizationModel,
-    VectorStore,
 )
 from src.router import AppRouter, Page  # noqa: E402
 
@@ -63,18 +63,23 @@ def initialize_session():
     # Client should be initialized regardless of the page
     if "ollama_client" not in st.session_state:
         is_debug = st.secrets.get("DEBUG", False)
+        use_local_ollama = st.secrets.get("USE_LOCAL_OLLAMA", False)
+
         if is_debug:
-            st.session_state.ollama_client = MockOllamaApiClient(token_delay=0.01)
+            st.session_state.ollama_client = MockOlmClientV2(token_delay=0.01)
+        elif use_local_ollama:
+            # Use local ollama serve directly
+            ollama_host = st.secrets.get("OLM_API_ENDPOINT", "http://localhost:11434")
+            st.session_state.ollama_client = OlmLocalClientV2(host=ollama_host)
         else:
+            # Use olm-api proxy
             ollama_api_endpoint = st.secrets.get("OLM_API_ENDPOINT")
             if not ollama_api_endpoint:
                 raise ValueError(
                     "OLM_API_ENDPOINT is not configured in Streamlit secrets."
                 )
 
-            st.session_state.ollama_client = OllamaApiClient(
-                api_url=ollama_api_endpoint
-            )
+            st.session_state.ollama_client = OlmApiClientV2(api_url=ollama_api_endpoint)
 
     # Initialize summarization model
     if "summarization_model" not in st.session_state:
@@ -93,10 +98,6 @@ def initialize_session():
     # Initialize scraping model
     if "scraping_model" not in st.session_state:
         st.session_state.scraping_model = ScrapingModel()
-
-    # Initialize vector store and load the embedding model
-    if "vector_store" not in st.session_state:
-        st.session_state.vector_store = VectorStore()
 
 
 if __name__ == "__main__":
