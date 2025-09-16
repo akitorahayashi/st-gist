@@ -1,6 +1,6 @@
 from typing import AsyncGenerator, Protocol
 
-from src.schemas import Message
+from olm_api.api.v2.schemas.message import Message
 
 
 class ConversationModelProtocol(Protocol):

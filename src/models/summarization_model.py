@@ -4,8 +4,10 @@ from string import Template
 
 import streamlit as st
 
-from src.protocols import OlmClientV2Protocol, SummarizationModelProtocol
-from src.schemas import Message, MessageRole
+from olm_api.api.v2.schemas.message import Message, MessageRole
+from olm_api.api.v2.schemas.response import ChatStreamResponse
+from olm_api.protocols import OlmClientV2Protocol
+from src.protocols import SummarizationModelProtocol
 
 logger = logging.getLogger(__name__)
 

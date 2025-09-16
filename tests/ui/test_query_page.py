@@ -55,11 +55,8 @@ class TestQueryPage:
         models["conversation"].should_respond.return_value = True
 
         # Mock async response
-        async def mock_respond(*args, **kwargs):
-            return MagicMock(content="AI response to user query")
-
         models["conversation"].respond_to_user_message = AsyncMock(
-            return_value=mock_respond()
+            return_value=MagicMock(content="AI response to user query")
         )
 
         # Navigate to chat page
@@ -97,7 +94,9 @@ class TestQueryPage:
         ) or any("失敗" in str(element.value) for element in at.markdown)
         assert (
             error_found or len(at.button) > 0 or at is not None
-        )  # App should load gracefully, error display may vary    def test_conversation_history_display(self, app_test_with_mocks):
+        )  # App should load gracefully, error display may vary
+
+    def test_conversation_history_display(self, app_test_with_mocks):
         """Test display of conversation history."""
         at, models = app_test_with_mocks
 

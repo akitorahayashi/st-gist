@@ -29,7 +29,7 @@ async def test_conversation_flow(conversation_model, mock_secrets):
     assert ai_response is not None
     assert len(ai_response.content or "") > 0
     assert len(conversation_model.messages) == 2
-    assert conversation_model.messages[1]["role"] == "ai"
+    assert conversation_model.messages[1]["role"] == "assistant"
     assert conversation_model.messages[1]["content"] == (ai_response.content or "")
     assert not conversation_model.should_respond()  # Last message is AI
 

@@ -1,5 +1,5 @@
 # Client Protocols
-from .clients.olm_client_protocol import OlmClientV2Protocol
+from olm_api_sdk.v2.protocol import OlmClientV2Protocol
 
 # Model Protocols
 from .models.conversation_model_protocol import ConversationModelProtocol

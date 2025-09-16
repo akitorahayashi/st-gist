@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from src.protocols.models.scraping_model_protocol import ScrapingModelProtocol
+from src.protocols import ScrapingModelProtocol
 
 
 class ScrapingModel(ScrapingModelProtocol):

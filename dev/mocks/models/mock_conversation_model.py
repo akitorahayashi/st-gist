@@ -1,8 +1,8 @@
 import asyncio
 from typing import AsyncGenerator
 
+from olm_api.api.v2.schemas.message import Message, MessageRole
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
-from src.schemas import Message, MessageRole
 
 
 class MockConversationModel(ConversationModelProtocol):
@@ -11,7 +11,6 @@ class MockConversationModel(ConversationModelProtocol):
     """
 
     def __init__(self, client=None):
-        self.client = client  # Not used in mock but kept for compatibility
         self.messages = []
         self.is_responding = False
 
