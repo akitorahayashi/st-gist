@@ -81,17 +81,35 @@ class SummarizationModel(SummarizationModelProtocol):
         if not text:
             return "", ""
 
-        # Extract thinking content
+        # Extract complete thinking content (with both opening and closing tags)
         thinking_pattern = r"<think>(.*?)</think>"
         thinking_matches = re.findall(thinking_pattern, text, re.DOTALL)
         thinking_content = "\n".join(thinking_matches).strip()
 
-        # Remove thinking tags to get actual content
+        # Remove complete thinking tags to get actual content
         content_without_thinking = re.sub(
             thinking_pattern, "", text, flags=re.DOTALL
-        ).strip()
+        )
 
-        return thinking_content, content_without_thinking
+        # Handle incomplete thinking tags at the end (streaming case)
+        # Extract content from incomplete <think> tags and add to thinking_content
+        incomplete_thinking_pattern = r"<think>(.*)$"
+        incomplete_match = re.search(incomplete_thinking_pattern, content_without_thinking, re.DOTALL)
+        if incomplete_match:
+            # Add incomplete thinking content to thinking_content
+            incomplete_content = incomplete_match.group(1).strip()
+            if incomplete_content:
+                if thinking_content:
+                    thinking_content += "\n" + incomplete_content
+                else:
+                    thinking_content = incomplete_content
+
+            # Remove the incomplete <think> tag and its content from actual content
+            content_without_thinking = re.sub(
+                incomplete_thinking_pattern, "", content_without_thinking, flags=re.DOTALL
+            )
+
+        return thinking_content, content_without_thinking.strip()
 
     async def stream_summary(self, scraped_content: str):
         """

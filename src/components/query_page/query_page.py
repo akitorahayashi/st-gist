@@ -41,37 +41,29 @@ def render_query_page():
         if not summarization_model.summary and not summarization_model.is_summarizing:
 
             try:
+
                 with st.spinner("要約を開始しています..."):
-                    # 思考過程用の固定expander
+
                     st.markdown("### 🤔 思考過程")
                     thinking_expander = st.expander("思考プロセス", expanded=True)
                     thinking_placeholder = thinking_expander.empty()
 
-                    # 要約用プレースホルダー
+                    st.markdown("### 📝 要約コンテンツ")
                     summary_placeholder = st.empty()
 
                     async def stream_to_placeholders():
-                        thinking_content = ""
-                        summary_content = ""
-
                         try:
                             stream_generator = summarization_model.stream_summary(
                                 scraped_content
                             )
                             async for thinking_chunk, summary_chunk in stream_generator:
-                                thinking_content = thinking_chunk
-                                summary_content = summary_chunk
+                                # expander内のplaceholderを更新
+                                if thinking_chunk.strip():
+                                    thinking_placeholder.markdown(thinking_chunk)
 
-                                # expanderの中身を更新
-                                if thinking_content.strip():
-                                    thinking_placeholder.markdown(thinking_content)
-
-                                # 要約内容を表示
-                                if summary_content.strip():
-                                    summary_placeholder.markdown(summary_content)
-
-                            # ストリーミング完了後はプレースホルダーをクリア（expanderは残す）
-                            summary_placeholder.empty()
+                                # 要約内容のplaceholderを更新
+                                if summary_chunk.strip():
+                                    summary_placeholder.markdown(summary_chunk)
 
                         except Exception as e:
                             error_msg = f"要約の生成中にエラーが発生しました: {str(e)}"
