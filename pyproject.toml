@@ -1,6 +1,6 @@
 [project]
 name = "st-gist"
-version = "1.1.0"
+version = "1.2.0"
 description = "A Streamlit app to summarize and query web pages."
 authors = [
     {name = "akitorahayashi", email = "atora.has75@gmail.com"}
@@ -8,7 +8,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "olm-api @ ./olm-api",
+    "olm-api @ git+https://github.com/akitorahayashi/olm-api.git@v2.2.0",
     "ollama>=0.4.4",
     "streamlit>=1.49.1",
     "pandas>=2.0.0",
