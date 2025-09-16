@@ -44,25 +44,29 @@ def render_query_page():
 
                 with st.spinner("要約を開始しています..."):
 
-                    st.markdown("### 🤔 思考過程")
-                    thinking_expander = st.expander("思考プロセス", expanded=True)
-                    thinking_placeholder = thinking_expander.empty()
-
-                    st.markdown("### 📝 要約コンテンツ")
+                    thinking_header_placeholder = st.empty()
+                    thinking_expander_placeholder = st.empty()
+                    summary_header_placeholder = st.empty()
                     summary_placeholder = st.empty()
 
                     async def stream_to_placeholders():
+                        thinking_placeholder = None
                         try:
                             stream_generator = summarization_model.stream_summary(
                                 scraped_content
                             )
                             async for thinking_chunk, summary_chunk in stream_generator:
-                                # expander内のplaceholderを更新
+                                # 思考過程の更新
                                 if thinking_chunk.strip():
+                                    if thinking_placeholder is None:
+                                        thinking_header_placeholder.markdown("### 🤔 思考過程")
+                                        thinking_expander = thinking_expander_placeholder.expander("思考プロセス", expanded=True)
+                                        thinking_placeholder = thinking_expander.empty()
                                     thinking_placeholder.markdown(thinking_chunk)
 
-                                # 要約内容のplaceholderを更新
+                                # 要約内容の更新
                                 if summary_chunk.strip():
+                                    summary_header_placeholder.markdown("### 📝 要約コンテンツ")
                                     summary_placeholder.markdown(summary_chunk)
 
                         except Exception as e:
