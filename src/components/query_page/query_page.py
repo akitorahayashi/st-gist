@@ -42,8 +42,14 @@ def render_query_page():
 
             try:
                 with st.spinner("要約を開始しています..."):
-                    thinking_container = st.empty()
+                    # 思考過程用の固定expander
+                    st.markdown("### 🤔 思考過程")
+                    thinking_expander = st.expander("思考プロセス", expanded=True)
+                    thinking_placeholder = thinking_expander.empty()
+
+                    # 要約用プレースホルダー
                     summary_placeholder = st.empty()
+
                     async def stream_to_placeholders():
                         thinking_content = ""
                         summary_content = ""
@@ -56,21 +62,15 @@ def render_query_page():
                                 thinking_content = thinking_chunk
                                 summary_content = summary_chunk
 
-                                # ストリーミング中もexpanderで思考過程を表示
-                                with thinking_container.container():
-                                    if thinking_content.strip():
-                                        st.markdown("### 🤔 思考過程")
-                                        with st.expander("思考プロセス", expanded=True):
-                                            st.markdown(thinking_content)
+                                # expanderの中身を更新
+                                if thinking_content.strip():
+                                    thinking_placeholder.markdown(thinking_content)
 
                                 # 要約内容を表示
                                 if summary_content.strip():
                                     summary_placeholder.markdown(summary_content)
-                                else:
-                                    summary_placeholder.empty()
 
-                            # ストリーミング完了後はプレースホルダーをクリア
-                            thinking_container.empty()
+                            # ストリーミング完了後はプレースホルダーをクリア（expanderは残す）
                             summary_placeholder.empty()
 
                         except Exception as e:
