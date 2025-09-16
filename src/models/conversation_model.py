@@ -156,7 +156,7 @@ class ConversationModel(ConversationModelProtocol):
 
         return "".join(history).strip()
 
-    async def respond_to_user_message(
+    def respond_to_user_message(
         self,
         user_message: str,
         summary: str = "",
@@ -196,7 +196,9 @@ class ConversationModel(ConversationModelProtocol):
             )
 
             question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
-            response = await self.client.generate(
+
+            # 同期版generate_syncを使用
+            response = self.client.generate_sync(
                 messages=messages, model_name=question_model, stream=False
             )
             choices = (

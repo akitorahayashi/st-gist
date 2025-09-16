@@ -87,14 +87,14 @@ class SummarizationModel(SummarizationModelProtocol):
         thinking_content = "\n".join(thinking_matches).strip()
 
         # Remove complete thinking tags to get actual content
-        content_without_thinking = re.sub(
-            thinking_pattern, "", text, flags=re.DOTALL
-        )
+        content_without_thinking = re.sub(thinking_pattern, "", text, flags=re.DOTALL)
 
         # Handle incomplete thinking tags at the end (streaming case)
         # Extract content from incomplete <think> tags and add to thinking_content
         incomplete_thinking_pattern = r"<think>(.*)$"
-        incomplete_match = re.search(incomplete_thinking_pattern, content_without_thinking, re.DOTALL)
+        incomplete_match = re.search(
+            incomplete_thinking_pattern, content_without_thinking, re.DOTALL
+        )
         if incomplete_match:
             # Add incomplete thinking content to thinking_content
             incomplete_content = incomplete_match.group(1).strip()
@@ -106,7 +106,10 @@ class SummarizationModel(SummarizationModelProtocol):
 
             # Remove the incomplete <think> tag and its content from actual content
             content_without_thinking = re.sub(
-                incomplete_thinking_pattern, "", content_without_thinking, flags=re.DOTALL
+                incomplete_thinking_pattern,
+                "",
+                content_without_thinking,
+                flags=re.DOTALL,
             )
 
         return thinking_content, content_without_thinking.strip()
@@ -168,7 +171,9 @@ class SummarizationModel(SummarizationModelProtocol):
                         accumulated_raw += content
 
                         # Parse to separate thinking and actual content
-                        thinking_content, actual_content = self._parse_thinking_content(accumulated_raw)
+                        thinking_content, actual_content = self._parse_thinking_content(
+                            accumulated_raw
+                        )
                         yield thinking_content, actual_content
 
         except Exception as e:

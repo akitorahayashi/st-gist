@@ -6,7 +6,6 @@ from src.components.query_page.chat_section import render_chat_section
 from src.models import ConversationModel
 
 
-
 def render_query_page():
     st.empty()
 
@@ -59,14 +58,22 @@ def render_query_page():
                                 # 思考過程の更新
                                 if thinking_chunk.strip():
                                     if thinking_placeholder is None:
-                                        thinking_header_placeholder.markdown("### 🤔 思考過程")
-                                        thinking_expander = thinking_expander_placeholder.expander("思考プロセス", expanded=True)
+                                        thinking_header_placeholder.markdown(
+                                            "### 🤔 思考過程"
+                                        )
+                                        thinking_expander = (
+                                            thinking_expander_placeholder.expander(
+                                                "思考プロセス", expanded=True
+                                            )
+                                        )
                                         thinking_placeholder = thinking_expander.empty()
                                     thinking_placeholder.markdown(thinking_chunk)
 
                                 # 要約内容の更新
                                 if summary_chunk.strip():
-                                    summary_header_placeholder.markdown("### 📝 要約コンテンツ")
+                                    summary_header_placeholder.markdown(
+                                        "### 📝 要約コンテンツ"
+                                    )
                                     summary_placeholder.markdown(summary_chunk)
 
                         except Exception as e:

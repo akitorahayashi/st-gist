@@ -1,11 +1,8 @@
-import asyncio
 import html
 
 import streamlit as st
 
 from src.models import ConversationModel
-
-
 
 
 def render_chat_section(
@@ -33,12 +30,10 @@ def render_chat_section(
             user_query = conversation_model.messages[-1]["content"]
             page_content = scraping_model.content if scraping_model else ""
             page_summary = summarization_model.summary if summarization_model else ""
-            ai_message_object = asyncio.run(
-                conversation_model.respond_to_user_message(
-                    user_query,
-                    summary=page_summary,
-                    page_content=page_content,
-                )
+            ai_message_object = conversation_model.respond_to_user_message(
+                user_query,
+                summary=page_summary,
+                page_content=page_content,
             )
 
             conversation_model.add_ai_message(ai_message_object.content or "")
