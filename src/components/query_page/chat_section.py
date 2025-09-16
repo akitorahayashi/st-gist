@@ -6,10 +6,11 @@ import streamlit as st
 from src.models import ConversationModel
 
 
+
+
 def render_chat_section(
     conversation_model: ConversationModel, scraping_model, summarization_model
 ):
-    """Render chat section with conversation functionality"""
 
     _render_chat_messages(
         conversation_model.messages, is_thinking=conversation_model.is_responding
@@ -23,42 +24,23 @@ def render_chat_section(
         conversation_model.add_user_message(prompt)
         st.rerun()
 
-    # If the last message is from the user and we should respond
     if conversation_model.should_respond():
         conversation_model.is_responding = True
         st.rerun()
 
-    # Handle AI response generation
     if conversation_model.is_responding:
         try:
             user_query = conversation_model.messages[-1]["content"]
-            # Get page content from scraping model
             page_content = scraping_model.content if scraping_model else ""
-            # Get summary from summarization model
             page_summary = summarization_model.summary if summarization_model else ""
-
-            # Create new event loop for chat response
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-            try:
-                ai_message_object = loop.run_until_complete(
-                    conversation_model.respond_to_user_message(
-                        user_query,
-                        summary=page_summary,
-                        page_content=page_content,
-                    )
+            ai_message_object = asyncio.run(
+                conversation_model.respond_to_user_message(
+                    user_query,
+                    summary=page_summary,
+                    page_content=page_content,
                 )
-            finally:
-                loop.close()
+            )
 
-            # Display thinking process if available
-            if ai_message_object.think and ai_message_object.think.strip():
-                st.markdown("### 🤔 AI思考過程")
-                with st.expander("思考プロセス", expanded=True):
-                    st.markdown(ai_message_object.think)
-
-            # Add only the content part to chat history (think is handled separately)
             conversation_model.add_ai_message(ai_message_object.content or "")
         except Exception as e:
             error_message = f"エラーが発生しました: {e}"
@@ -70,10 +52,6 @@ def render_chat_section(
 
 
 def _render_chat_messages(messages, is_thinking=False):
-    """
-    Render all chat messages with a single style block by building a single HTML string.
-    Also renders the thinking bubble if is_thinking is True.
-    """
     messages_html_list = []
     for msg in messages:
         if msg["role"] == "user":
@@ -97,7 +75,6 @@ def _render_chat_messages(messages, is_thinking=False):
     """
             )
 
-    # is_thinkingがTrueの場合、思考中バブルをリストの末尾に追加
     if is_thinking:
         messages_html_list.append(
             """
