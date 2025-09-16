@@ -1,16 +1,17 @@
+import json
 import os
-import re
 from string import Template
 from typing import AsyncGenerator
 
 import streamlit as st
-from sdk.olm_api_client import OllamaClientProtocol
+from olm_api.api.v2.schemas.message import Message, MessageRole
+from olm_api_sdk.v2 import OlmClientV2Protocol
 
-from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
+from src.protocols import ConversationModelProtocol
 
 
 class ConversationModel(ConversationModelProtocol):
-    def __init__(self, client: OllamaClientProtocol):
+    def __init__(self, client: OlmClientV2Protocol):
         self.client = client
         self.messages = []
         self.is_responding = False
@@ -62,10 +63,35 @@ class ConversationModel(ConversationModelProtocol):
         try:
             truncated_message = self._truncate_prompt(user_message)
             question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
-            async for chunk in self.client.gen_stream(
-                truncated_message, model=question_model
-            ):
-                yield chunk
+            messages = [Message(role=MessageRole.USER, content=truncated_message)]
+            stream = await self.client.generate(
+                messages=messages, model_name=question_model, stream=True
+            )
+            async for chunk in stream:
+                # Parse JSON string if necessary
+                if isinstance(chunk, str):
+                    try:
+                        chunk = json.loads(chunk)
+                    except json.JSONDecodeError:
+                        continue
+
+                choices = (
+                    chunk.get("choices") if isinstance(chunk, dict) else chunk.choices
+                )
+                if choices and len(choices) > 0:
+                    choice = choices[0]
+                    delta = (
+                        choice.get("delta")
+                        if isinstance(choice, dict)
+                        else choice.delta
+                    )
+                    content = (
+                        delta.get("content")
+                        if isinstance(delta, dict)
+                        else delta.content
+                    )
+                    if content:
+                        yield content
         except Exception as e:
             self.last_error = str(e)
             raise
@@ -78,7 +104,23 @@ class ConversationModel(ConversationModelProtocol):
         """
         truncated_message = self._truncate_prompt(user_message)
         question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
-        return await self.client.gen_batch(truncated_message, model=question_model)
+        messages = [Message(role=MessageRole.USER, content=truncated_message)]
+        response = await self.client.generate(
+            messages=messages, model_name=question_model, stream=False
+        )
+        choices = (
+            response.get("choices") if isinstance(response, dict) else response.choices
+        )
+        if choices and len(choices) > 0:
+            choice = choices[0]
+            message = (
+                choice.get("message") if isinstance(choice, dict) else choice.message
+            )
+            content = (
+                message.get("content") if isinstance(message, dict) else message.content
+            )
+            return content or ""
+        return ""
 
     def _truncate_user_message(self, user_message: str, max_length: int = 1500) -> str:
         """
@@ -114,15 +156,14 @@ class ConversationModel(ConversationModelProtocol):
 
         return "".join(history).strip()
 
-    async def respond_to_user_message(
+    def respond_to_user_message(
         self,
         user_message: str,
         summary: str = "",
-        vector_search_content: str = "",
         page_content: str = "",
-    ) -> str:
+    ) -> Message:
         """
-        WebページのQ&A形式を使用して、自動状態管理でユーザーメッセージへの応答を生成します。
+        WebページのQ&A形式を使用して、messages配列を活用した会話履歴でユーザーメッセージへの応答を生成します。
         """
         self.is_responding = True
         try:
@@ -133,31 +174,53 @@ class ConversationModel(ConversationModelProtocol):
                 user_message, max_length=CONTEXT_MAX_LENGTH
             )
 
-            # 会話履歴の最大長を計算
-            history_max_length = max(
-                0, CONTEXT_MAX_LENGTH - len(truncated_user_message)
-            )
-
-            # 会話履歴をフォーマットする
-            chat_history = self._format_chat_history(max_length=history_max_length)
-
-            # WebページのQ&Aプロンプトを構築する
-            qa_prompt = self._qa_prompt_template.safe_substitute(
+            # WebページのQ&Aプロンプトを構築する（システムプロンプト）
+            system_prompt = self._qa_prompt_template.safe_substitute(
                 summary=summary,
-                user_message=truncated_user_message,
-                chat_history=chat_history,
-                vector_search_content=vector_search_content,
                 page_content=page_content,
             )
 
-            # プロンプト全体の最終的な切り詰め（安全策）
-            truncated_qa_prompt = self._truncate_prompt(qa_prompt)
+            # v2形式のmessages配列を構築
+            messages = [Message(role=MessageRole.SYSTEM, content=system_prompt)]
+
+            # 既存の会話履歴をmessages形式で追加（最新のユーザーメッセージ以外）
+            for msg in self.messages[:-1]:
+                role = (
+                    MessageRole.USER if msg["role"] == "user" else MessageRole.ASSISTANT
+                )
+                messages.append(Message(role=role, content=msg["content"]))
+
+            # 現在のユーザーメッセージを追加
+            messages.append(
+                Message(role=MessageRole.USER, content=truncated_user_message)
+            )
 
             question_model = st.secrets.get("QUESTION_MODEL", "qwen3:0.6b")
-            response = await self.client.gen_batch(
-                truncated_qa_prompt, model=question_model
+
+            # 同期版generate_syncを使用
+            response = self.client.generate_sync(
+                messages=messages, model_name=question_model, stream=False
             )
-            return response
+            choices = (
+                response.get("choices")
+                if isinstance(response, dict)
+                else response.choices
+            )
+            if choices and len(choices) > 0:
+                choice = choices[0]
+                message = (
+                    choice.get("message")
+                    if isinstance(choice, dict)
+                    else choice.message
+                )
+                content = (
+                    message.get("content")
+                    if isinstance(message, dict)
+                    else message.content
+                )
+                return Message(role=MessageRole.ASSISTANT, content=content or "")
+            # Return empty message if no response
+            return Message(role=MessageRole.ASSISTANT, content="")
         except Exception:
             self.last_error = "応答の生成に失敗しました。"
             raise
@@ -174,7 +237,7 @@ class ConversationModel(ConversationModelProtocol):
         """
         Add an AI message to the chat history.
         """
-        self.messages.append({"role": "ai", "content": content})
+        self.messages.append({"role": "assistant", "content": content})
 
     def reset(self):
         """
@@ -193,28 +256,6 @@ class ConversationModel(ConversationModelProtocol):
             and self.messages[-1]["role"] == "user"
             and not self.is_responding
         )
-
-    def extract_think_content(self, text: str) -> tuple[str, str]:
-        """
-        Extract think content from text and return (thinking_content, remaining_text).
-
-        Args:
-            text: Input text that may contain <think> tags
-
-        Returns:
-            tuple of (thinking_content, text_without_think_tags)
-        """
-        # Pattern to match think tags and their content
-        think_pattern = r"<think>(.*?)</think>"
-
-        # Find all think content
-        think_matches = re.findall(think_pattern, text, re.DOTALL)
-        thinking_content = "\n".join(think_matches).strip()
-
-        # Remove think tags from the original text
-        cleaned_text = re.sub(think_pattern, "", text, flags=re.DOTALL).strip()
-
-        return thinking_content, cleaned_text
 
     def limit_messages(self, max_messages=10):
         """

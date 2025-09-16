@@ -1,6 +1,8 @@
 import asyncio
 from typing import AsyncGenerator
 
+from olm_api.api.v2.schemas.message import Message, MessageRole
+
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
 
 
@@ -10,7 +12,6 @@ class MockConversationModel(ConversationModelProtocol):
     """
 
     def __init__(self, client=None):
-        self.client = client  # Not used in mock but kept for compatibility
         self.messages = []
         self.is_responding = False
 
@@ -47,14 +48,19 @@ class MockConversationModel(ConversationModelProtocol):
         else:
             return f"「{user_message}」についてお答えします。これはテスト環境での模擬応答です。"
 
-    async def respond_to_user_message(self, user_message: str) -> str:
+    async def respond_to_user_message(self, user_message: str) -> Message:
         """
         Generate a response to user message with automatic state management.
         """
         self.is_responding = True
         try:
-            response = await self.generate_response_once(user_message)
-            return response
+            response_text = await self.generate_response_once(user_message)
+            return Message(
+                role=MessageRole.ASSISTANT,
+                content=response_text,
+                think="Mock thinking process for test",
+                response=f"<think>Mock thinking process for test</think>{response_text}",
+            )
         finally:
             self.is_responding = False
 
@@ -86,21 +92,6 @@ class MockConversationModel(ConversationModelProtocol):
             and self.messages[-1]["role"] == "user"
             and not self.is_responding
         )
-
-    def extract_think_content(self, text: str) -> tuple[str, str]:
-        """
-        Mock implementation of think content extraction.
-        """
-        # Simple mock implementation - no actual think tags processing
-        if "<think>" in text and "</think>" in text:
-            start = text.find("<think>") + 7
-            end = text.find("</think>")
-            thinking_content = text[start:end].strip()
-            cleaned_text = text.replace(
-                f"<think>{thinking_content}</think>", ""
-            ).strip()
-            return thinking_content, cleaned_text
-        return "", text
 
     def limit_messages(self, max_messages: int = 10) -> None:
         """

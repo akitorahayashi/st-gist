@@ -1,5 +1,5 @@
 from string import Template
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 
@@ -57,14 +57,29 @@ class TestSummarizationModel:
         """Test successful streaming summarization."""
         scraped_content = "This is the content to be summarized."
 
-        # This should be an async generator
+        # Mock v2 streaming response with content containing think tags
         async def stream_generator():
-            yield "<think>Thinking "
-            yield "about it.</think>"
-            yield "This is the summary."
+            # Mock ChatStreamResponse objects with content containing think tags
+            chunk1 = MagicMock()
+            chunk1.choices = [MagicMock()]
+            chunk1.choices[0].delta = MagicMock()
+            chunk1.choices[0].delta.content = "<think>Thinking "
+            yield chunk1
 
-        # The mock's return value should be the async generator itself
-        mock_llm_client.gen_stream.return_value = stream_generator()
+            chunk2 = MagicMock()
+            chunk2.choices = [MagicMock()]
+            chunk2.choices[0].delta = MagicMock()
+            chunk2.choices[0].delta.content = "about it.</think>"
+            yield chunk2
+
+            chunk3 = MagicMock()
+            chunk3.choices = [MagicMock()]
+            chunk3.choices[0].delta = MagicMock()
+            chunk3.choices[0].delta.content = "This is the summary."
+            yield chunk3
+
+        # The mock should return an async generator when stream=True
+        mock_llm_client.generate = AsyncMock(return_value=stream_generator())
 
         results = []
         async for thinking, summary in summarization_model.stream_summary(
@@ -72,12 +87,12 @@ class TestSummarizationModel:
         ):
             results.append((thinking, summary))
 
-        # Check intermediate yields based on the updated extract_think_content logic
-        # 1st yield: "<think>Thinking " - Incomplete tag, extract "Thinking " as thinking content
+        # Check intermediate yields based on accumulated content parsing
+        # 1st yield: accumulated="<think>Thinking " -> thinking="Thinking", content="" (strip removes trailing space)
         assert results[0] == ("Thinking", "")
-        # 2nd yield: "<think>Thinking about it.</think>" - Complete tag, extract "Thinking about it." as thinking
+        # 2nd yield: accumulated="<think>Thinking about it.</think>" -> thinking="Thinking about it.", content=""
         assert results[1] == ("Thinking about it.", "")
-        # 3rd yield: "<think>Thinking about it.</think>This is the summary." - Complete tag + summary
+        # 3rd yield: accumulated="<think>Thinking about it.</think>This is the summary." -> thinking="Thinking about it.", content="This is the summary."
         assert results[2] == ("Thinking about it.", "This is the summary.")
         # Final yield from the completed stream
         assert results[3] == ("Thinking about it.", "This is the summary.")
@@ -93,10 +108,14 @@ class TestSummarizationModel:
         scraped_content = "This is some content."
 
         async def error_generator():
-            yield "this is fine"
+            chunk = MagicMock()
+            chunk.choices = [MagicMock()]
+            chunk.choices[0].delta = MagicMock()
+            chunk.choices[0].delta.content = "this is fine"
+            yield chunk
             raise Exception("LLM Error")
 
-        mock_llm_client.gen_stream.return_value = error_generator()
+        mock_llm_client.generate.return_value = error_generator()
 
         with patch("streamlit.session_state", MagicMock()):
             with pytest.raises(

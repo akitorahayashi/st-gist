@@ -94,11 +94,6 @@ def render_url_input_form():
             try:
                 scraping_model.scrape(target_url)
 
-                # スクレイピング完了後、遷移前にembeddingを作成
-                vector_store = st.session_state.get("vector_store")
-                if vector_store and scraping_model.content:
-                    vector_store.create_embeddings(scraping_model.content)
-
                 app_router.go_to_chat_page()
                 st.rerun()
             except Exception as e:
