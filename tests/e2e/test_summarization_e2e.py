@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -126,9 +126,11 @@ class TestSummarizationE2E:
                 client = OlmLocalClientV2()
                 summarization_model = SummarizationModel(llm_client=client)
 
-                # Patch secrets to use specific model
-                with pytest.MonkeyPatch().context() as m:
-                    m.setenv("SUMMARY_MODEL", model_name)
+                # Patch secrets to use specific model (SummarizationModel reads st.secrets)
+                with patch("streamlit.secrets") as mock_secrets:
+                    mock_secrets.get.side_effect = lambda key, default=None: {
+                        "SUMMARY_MODEL": model_name
+                    }.get(key, default)
 
                     results = []
                     async for thinking, summary in summarization_model.stream_summary(

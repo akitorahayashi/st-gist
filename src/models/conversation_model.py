@@ -152,7 +152,7 @@ class ConversationModel(ConversationModelProtocol):
             messages = [Message(role=MessageRole.SYSTEM, content=system_prompt)]
 
             # 既存の会話履歴をmessages形式で追加（最新のユーザーメッセージ以外）
-            for msg in self.messages:
+            for msg in self.messages[:-1]:
                 role = (
                     MessageRole.USER if msg["role"] == "user" else MessageRole.ASSISTANT
                 )

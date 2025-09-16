@@ -20,7 +20,7 @@ from src.models import (  # noqa: E402
 from src.router import AppRouter, Page  # noqa: E402
 
 
-@st.cache_data
+@st.cache_resource
 def load_model(model_class, _client):
     """モデルをセッション毎にキャッシュしてロードする"""
     return model_class(_client)
