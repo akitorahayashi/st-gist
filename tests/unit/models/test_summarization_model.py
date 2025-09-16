@@ -57,27 +57,24 @@ class TestSummarizationModel:
         """Test successful streaming summarization."""
         scraped_content = "This is the content to be summarized."
 
-        # Mock v2 streaming response with separate think and content fields
+        # Mock v2 streaming response with content containing think tags
         async def stream_generator():
-            # Mock ChatStreamResponse objects with separate delta.think and delta.content
+            # Mock ChatStreamResponse objects with content containing think tags
             chunk1 = MagicMock()
             chunk1.choices = [MagicMock()]
             chunk1.choices[0].delta = MagicMock()
-            chunk1.choices[0].delta.think = "Thinking "
-            chunk1.choices[0].delta.content = None
+            chunk1.choices[0].delta.content = "<think>Thinking "
             yield chunk1
 
             chunk2 = MagicMock()
             chunk2.choices = [MagicMock()]
             chunk2.choices[0].delta = MagicMock()
-            chunk2.choices[0].delta.think = "about it."
-            chunk2.choices[0].delta.content = None
+            chunk2.choices[0].delta.content = "about it.</think>"
             yield chunk2
 
             chunk3 = MagicMock()
             chunk3.choices = [MagicMock()]
             chunk3.choices[0].delta = MagicMock()
-            chunk3.choices[0].delta.think = None
             chunk3.choices[0].delta.content = "This is the summary."
             yield chunk3
 
@@ -90,12 +87,12 @@ class TestSummarizationModel:
         ):
             results.append((thinking, summary))
 
-        # Check intermediate yields based on the new delta.think and delta.content logic
-        # 1st yield: delta.think="Thinking ", delta.content=None
-        assert results[0] == ("Thinking ", "")
-        # 2nd yield: delta.think="about it.", delta.content=None - accumulated thinking
+        # Check intermediate yields based on accumulated content parsing
+        # 1st yield: accumulated="<think>Thinking " -> thinking="Thinking", content="" (strip removes trailing space)
+        assert results[0] == ("Thinking", "")
+        # 2nd yield: accumulated="<think>Thinking about it.</think>" -> thinking="Thinking about it.", content=""
         assert results[1] == ("Thinking about it.", "")
-        # 3rd yield: delta.think=None, delta.content="This is the summary." - accumulated content
+        # 3rd yield: accumulated="<think>Thinking about it.</think>This is the summary." -> thinking="Thinking about it.", content="This is the summary."
         assert results[2] == ("Thinking about it.", "This is the summary.")
         # Final yield from the completed stream
         assert results[3] == ("Thinking about it.", "This is the summary.")

@@ -115,10 +115,17 @@ class TestConversationModel:
             Message(role=MessageRole.USER, content=user_question),
         ]
 
-        response = await conversation_model.respond_to_user_message(user_question)
+        # Mock the generate_sync method to return a proper response
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message = MagicMock()
+        mock_response.choices[0].message.content = "AI response"
+        mock_client.generate_sync.return_value = mock_response
 
-        # Verify that the generate method was called with the correct messages and model
-        mock_client.generate.assert_called_once_with(
+        response = conversation_model.respond_to_user_message(user_question)
+
+        # Verify that the generate_sync method was called with the correct messages and model
+        mock_client.generate_sync.assert_called_once_with(
             messages=expected_messages, model_name="test-model", stream=False
         )
         # Now returns a Message object instead of string

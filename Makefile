@@ -34,7 +34,7 @@ setup: ## Project initial setup: install dependencies and create secrets.toml fi
 	@echo "🐍 Installing python dependencies with uv..."
 	@uv sync
 	@echo "📦 Initializing and updating git submodules..."
-	@git submodule update --init --recursive
+	@git submodule update --init --remote --recursive
 	@echo "📄 Creating secrets.toml file..."
 	@if [ ! -f .streamlit/secrets.toml ]; then \
 		echo "Creating .streamlit/secrets.toml from .streamlit/secrets.example.toml..." ; \

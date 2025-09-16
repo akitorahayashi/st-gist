@@ -20,7 +20,7 @@ async def test_conversation_flow(conversation_model, mock_secrets):
     assert conversation_model.should_respond()
 
     # Generate AI response
-    ai_response = await conversation_model.respond_to_user_message(
+    ai_response = conversation_model.respond_to_user_message(
         user_message, summary="Test summary", page_content="Test page content"
     )
     conversation_model.add_ai_message(ai_response.content or "")
@@ -53,7 +53,7 @@ async def test_conversation_with_history(conversation_model, mock_secrets):
     assert conversation_model.should_respond()
 
     # Generate response (should include history context)
-    ai_response = await conversation_model.respond_to_user_message(
+    ai_response = conversation_model.respond_to_user_message(
         new_message,
         summary="Python tutorial content",
         page_content="Python is a programming language...",
