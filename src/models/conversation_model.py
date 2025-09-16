@@ -1,13 +1,13 @@
+import json
 import os
 from string import Template
 from typing import AsyncGenerator
 
 import streamlit as st
-
 from olm_api.api.v2.schemas.message import Message, MessageRole
-from olm_api.api.v2.schemas.response import ChatStreamResponse
-from olm_api.protocols import OlmClientV2Protocol
-from src.protocols import ConversationModelProtocol, 
+from olm_api_sdk.v2 import OlmClientV2Protocol
+
+from src.protocols import ConversationModelProtocol
 
 
 class ConversationModel(ConversationModelProtocol):
@@ -68,6 +68,13 @@ class ConversationModel(ConversationModelProtocol):
                 messages=messages, model_name=question_model, stream=True
             )
             async for chunk in stream:
+                # Parse JSON string if necessary
+                if isinstance(chunk, str):
+                    try:
+                        chunk = json.loads(chunk)
+                    except json.JSONDecodeError:
+                        continue
+
                 choices = (
                     chunk.get("choices") if isinstance(chunk, dict) else chunk.choices
                 )
@@ -228,7 +235,7 @@ class ConversationModel(ConversationModelProtocol):
         """
         Add an AI message to the chat history.
         """
-        self.messages.append({"role": "ai", "content": content})
+        self.messages.append({"role": "assistant", "content": content})
 
     def reset(self):
         """

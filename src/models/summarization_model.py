@@ -1,12 +1,12 @@
+import json
 import logging
 import os
 from string import Template
 
 import streamlit as st
-
 from olm_api.api.v2.schemas.message import Message, MessageRole
-from olm_api.api.v2.schemas.response import ChatStreamResponse
-from olm_api.protocols import OlmClientV2Protocol
+from olm_api_sdk.v2 import OlmClientV2Protocol
+
 from src.protocols import SummarizationModelProtocol
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,13 @@ class SummarizationModel(SummarizationModelProtocol):
                 messages=messages, model_name=summary_model, stream=True
             )
             async for chunk in stream:
+                # Parse JSON string if necessary
+                if isinstance(chunk, str):
+                    try:
+                        chunk = json.loads(chunk)
+                    except json.JSONDecodeError:
+                        continue
+
                 choices = (
                     chunk.get("choices") if isinstance(chunk, dict) else chunk.choices
                 )

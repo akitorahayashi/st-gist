@@ -2,8 +2,8 @@ from string import Template
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
-
 from olm_api.api.v2.schemas.message import Message, MessageRole
+
 from src.models.conversation_model import ConversationModel
 
 
@@ -37,7 +37,9 @@ class TestConversationModel:
     def test_add_ai_message(self, conversation_model):
         """Test that an AI message is added correctly."""
         conversation_model.add_ai_message("Hi there")
-        assert conversation_model.messages == [{"role": "assistant", "content": "Hi there"}]
+        assert conversation_model.messages == [
+            {"role": "assistant", "content": "Hi there"}
+        ]
 
     def test_reset(self, conversation_model):
         """Test that the reset method clears messages."""

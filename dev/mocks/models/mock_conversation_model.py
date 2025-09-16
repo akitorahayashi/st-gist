@@ -2,6 +2,7 @@ import asyncio
 from typing import AsyncGenerator
 
 from olm_api.api.v2.schemas.message import Message, MessageRole
+
 from src.protocols.models.conversation_model_protocol import ConversationModelProtocol
 
 

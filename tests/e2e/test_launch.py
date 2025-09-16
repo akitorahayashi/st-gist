@@ -13,10 +13,8 @@ def load_secrets(secrets_file: str = ".streamlit/secrets.toml") -> dict:
         with open(secrets_file, "r") as f:
             return toml.load(f)
     except FileNotFoundError:
-        print(f"Warning: '{secrets_file}' not found. Using default values.")
         return {}
-    except Exception as e:
-        print(f"Error loading '{secrets_file}': {e}")
+    except Exception:
         return {}
 
 
@@ -64,8 +62,6 @@ class StreamlitE2ETest:
         if result.returncode != 0:
             assert False, f"Package import failed:\n{result.stderr}"
 
-        print("\n✅ Package imports successfully")
-
     def test_streamlit_app_starts_without_errors(self):
         """Test that Streamlit starts and serves content without errors."""
         process = subprocess.Popen(
@@ -99,8 +95,6 @@ class StreamlitE2ETest:
                 assert False, f"Server returned status {response.status_code}"
 
             # Basic check - if we got here, server is working
-
-            print("\n✅ Streamlit app loaded successfully")
 
         finally:
             process.terminate()
