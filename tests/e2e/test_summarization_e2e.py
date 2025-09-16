@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from olm_api_sdk.v2 import OlmLocalClientV2
 
-from src.clients.olm_local_client_v2 import OlmLocalClientV2
 from src.models.scraping_model import ScrapingModel
 from src.models.summarization_model import SummarizationModel
 

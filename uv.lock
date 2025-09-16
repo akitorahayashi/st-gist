@@ -471,8 +471,8 @@ wheels = [
 
 [[package]]
 name = "olm-api"
-version = "2.1.1"
-source = { git = "https://github.com/akitorahayashi/olm-api.git?rev=v2.1.1#2680e446fdd2457471dcf2e2f02278b5ce186867" }
+version = "2.2.0"
+source = { git = "https://github.com/akitorahayashi/olm-api.git?rev=v2.2.0#3dac28ebafdd267e5ee660fe341a28f78871f78f" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
@@ -1167,7 +1167,7 @@ requires-dist = [
     { name = "httpx", specifier = "~=0.27.0" },
     { name = "numpy", specifier = ">=1.26.0,<2.0" },
     { name = "ollama", specifier = ">=0.4.4" },
-    { name = "olm-api", git = "https://github.com/akitorahayashi/olm-api.git?rev=v2.1.1" },
+    { name = "olm-api", git = "https://github.com/akitorahayashi/olm-api.git?rev=v2.2.0" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "plotly", specifier = ">=5.17.0" },
     { name = "streamlit", specifier = ">=1.49.1" },

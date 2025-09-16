@@ -5,10 +5,20 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-import streamlit as st  # noqa: E402
+# Add SDK path for olm_api_sdk
+sdk_path = os.path.join(
+    project_root, ".venv", "lib", "python3.12", "site-packages", "sdk"
+)
+if sdk_path not in sys.path:
+    sys.path.insert(0, sdk_path)
 
-from dev.mocks.clients import MockOlmClientV2  # noqa: E402
-from src.clients import OlmApiClientV2, OlmLocalClientV2  # noqa: E402
+import streamlit as st  # noqa: E402
+from olm_api_sdk.v2 import (  # noqa: E402
+    MockOlmClientV2,
+    OlmApiClientV2,
+    OlmLocalClientV2,
+)
+
 from src.components.query_page.query_page import render_query_page  # noqa: E402
 from src.components.sidebar.sidebar import render_sidebar  # noqa: E402
 from src.components.url_input.url_input_page import render_url_input_page  # noqa: E402
@@ -20,9 +30,8 @@ from src.models import (  # noqa: E402
 from src.router import AppRouter, Page  # noqa: E402
 
 
-@st.cache_resource
 def load_model(model_class, _client):
-    """モデルをセッション毎にキャッシュしてロードする"""
+    """モデルをロードする"""
     return model_class(_client)
 
 

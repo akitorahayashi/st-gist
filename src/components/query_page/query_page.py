@@ -29,8 +29,6 @@ def render_query_page():
 
     # Get all necessary data from models and session_state
     target_url = st.session_state.get("target_url", "")
-    current_thinking = summarization_model.thinking if summarization_model else ""
-    page_summary = summarization_model.summary if summarization_model else ""
     scraped_content = scraping_model.content if scraping_model else ""
 
     # Display target URL if available
@@ -47,75 +45,83 @@ def render_query_page():
         with st.expander("取得したコンテンツ", expanded=False):
             st.write(scraped_content)
 
-    # Display thinking content if available
-    if current_thinking.strip():
-        st.markdown("### 🤔 思考過程")
-        with st.expander("思考プロセス", expanded=True):
-            st.markdown(current_thinking)
+    # --- 修正: 要約ロジック ---
+    # summarization_model と scraped_content が存在する場合に実行
+    if summarization_model and scraped_content:
 
-    # Display summary content
-    if page_summary.strip():
-        st.markdown("### 📝 要約コンテンツ")
-        st.markdown(page_summary)
+        # まだ要約が生成されておらず、現在要約中でもない場合
+        if not summarization_model.summary and not summarization_model.is_summarizing:
 
-    # Handle stream generation from scraped content - only run once
-    if (
-        summarization_model
-        and scraped_content
-        and not (page_summary or current_thinking)
-        and not summarization_model.is_summarizing
-    ):
-        with st.spinner("要約を開始しています..."):
+            # --- ここからが新しいストリーミング処理 ---
+
+            # プレースホルダーを先に定義
+            st.markdown("### 🤔 思考過程")
+            thinking_expander = st.expander("思考プロセス", expanded=True)
+            thinking_placeholder = thinking_expander.empty()
+
+            st.markdown("### 📝 要約コンテンツ")
+            summary_placeholder = st.empty()
+
             try:
-                # Create placeholders for streaming content
-                thinking_placeholder = st.empty()
-                summary_placeholder = st.empty()
-
-                # Create new event loop for synchronous processing
+                # 新しいイベントループを作成
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
 
-                try:
-                    # Get async generator
-                    async_gen = summarization_model.stream_summary(scraped_content)
+                # model から async
+                # generator を取得
+                stream_generator = summarization_model.stream_summary(scraped_content)
 
-                    # Process each chunk synchronously
-                    while True:
-                        try:
-                            thinking_content, summary_content = loop.run_until_complete(
-                                anext(async_gen)
-                            )
+                # ストリームを処理し、プレースホルダーを更新する async 関数
+                async def stream_to_placeholders():
+                    thinking_content = ""
+                    summary_content = ""
 
-                            # Update placeholders with streamed content
-                            if thinking_content.strip():
-                                with thinking_placeholder.container():
-                                    st.markdown("### 🤔 思考過程")
-                                    with st.expander("思考プロセス", expanded=True):
-                                        st.markdown(thinking_content)
+                    try:
+                        # stream_summary から (thinking, content) のタプルを受け取る
+                        async for thinking_chunk, summary_chunk in stream_generator:
+                            thinking_content = thinking_chunk
+                            summary_content = summary_chunk
 
-                            if summary_content.strip():
-                                with summary_placeholder.container():
-                                    st.markdown("### 📝 要約コンテンツ")
-                                    st.markdown(summary_content)
+                            # プレースホルダーをリアルタイムで更新
+                            thinking_placeholder.markdown(thinking_content + " ▌")
+                            summary_placeholder.markdown(summary_content + " ▌")
 
-                            # Small delay to allow UI updates
-                            import time
+                        # ストリーム終了後、カーソルなしで最終結果を表示
+                        thinking_placeholder.markdown(thinking_content)
+                        summary_placeholder.markdown(summary_content)
 
-                            time.sleep(0.01)
+                        # 注: self.thinking, self.summary, self.is_summarizing の更新は
+                        # summarization_model.py 側の finally ブロックで自動的に行われる
 
-                        except StopAsyncIteration:
-                            break
+                    except Exception as e:
+                        st.error(f"要約の生成中にエラーが発生しました: {str(e)}")
+                        summarization_model.last_error = str(e)
+                        # モデル側でエラーが発生しても is_summarizing は False になる
 
-                finally:
-                    loop.close()
-            except Exception as e:
-                summarization_model.last_error = (
-                    f"要約の生成中にエラーが発生しました: {str(e)}"
-                )
-                st.error(summarization_model.last_error)
+                # async 関数を実行
+                loop.run_until_complete(stream_to_placeholders())
+
+            finally:
+                loop.close()
+
+            # ストリームが完了（または失敗）したら、
+            # モデルに保存された最終状態でページを再描画する
+            st.rerun()
+            # --- ここまでが新しいストリーミング処理 ---
+
+        # ストリーミングが完了した後（または既に完了していた場合）、
+        # model に保存された最終結果を静的に表示する
+        if summarization_model.thinking.strip():
+            st.markdown("### 🤔 思考過程")
+            with st.expander("思考プロセス", expanded=True):
+                st.markdown(summarization_model.thinking)
+
+        if summarization_model.summary.strip():
+            st.markdown("### 📝 要約コンテンツ")
+            st.markdown(summarization_model.summary)
 
     # Add divider before chat if we have content
-    if current_thinking.strip() or page_summary.strip():
+    if summarization_model and summarization_model.summary.strip():
         st.markdown("---")
 
     # --- Chat Logic --- #
@@ -142,14 +148,23 @@ def render_query_page():
             user_query = conversation_model.messages[-1]["content"]
             # Get page content from scraping model
             page_content = scraping_model.content if scraping_model else ""
+            # Get summary from summarization model
+            page_summary = summarization_model.summary if summarization_model else ""
 
-            ai_message_object = asyncio.run(
-                conversation_model.respond_to_user_message(
-                    user_query,
-                    summary=page_summary,
-                    page_content=page_content,
+            # Create new event loop for chat response
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            try:
+                ai_message_object = loop.run_until_complete(
+                    conversation_model.respond_to_user_message(
+                        user_query,
+                        summary=page_summary,
+                        page_content=page_content,
+                    )
                 )
-            )
+            finally:
+                loop.close()
 
             # Display thinking process if available
             if ai_message_object.think and ai_message_object.think.strip():

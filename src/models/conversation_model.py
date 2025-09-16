@@ -66,10 +66,23 @@ class ConversationModel(ConversationModelProtocol):
                 messages=messages, model_name=question_model, stream=True
             )
             async for chunk in stream:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if delta.content:
-                        yield delta.content
+                choices = (
+                    chunk.get("choices") if isinstance(chunk, dict) else chunk.choices
+                )
+                if choices and len(choices) > 0:
+                    choice = choices[0]
+                    delta = (
+                        choice.get("delta")
+                        if isinstance(choice, dict)
+                        else choice.delta
+                    )
+                    content = (
+                        delta.get("content")
+                        if isinstance(delta, dict)
+                        else delta.content
+                    )
+                    if content:
+                        yield content
         except Exception as e:
             self.last_error = str(e)
             raise
@@ -86,8 +99,18 @@ class ConversationModel(ConversationModelProtocol):
         response = await self.client.generate(
             messages=messages, model_name=question_model, stream=False
         )
-        if response.choices and len(response.choices) > 0:
-            return response.choices[0].message.content or ""
+        choices = (
+            response.get("choices") if isinstance(response, dict) else response.choices
+        )
+        if choices and len(choices) > 0:
+            choice = choices[0]
+            message = (
+                choice.get("message") if isinstance(choice, dict) else choice.message
+            )
+            content = (
+                message.get("content") if isinstance(message, dict) else message.content
+            )
+            return content or ""
         return ""
 
     def _truncate_user_message(self, user_message: str, max_length: int = 1500) -> str:
@@ -167,8 +190,24 @@ class ConversationModel(ConversationModelProtocol):
             response = await self.client.generate(
                 messages=messages, model_name=question_model, stream=False
             )
-            if response.choices and len(response.choices) > 0:
-                return response.choices[0].message
+            choices = (
+                response.get("choices")
+                if isinstance(response, dict)
+                else response.choices
+            )
+            if choices and len(choices) > 0:
+                choice = choices[0]
+                message = (
+                    choice.get("message")
+                    if isinstance(choice, dict)
+                    else choice.message
+                )
+                content = (
+                    message.get("content")
+                    if isinstance(message, dict)
+                    else message.content
+                )
+                return Message(role=MessageRole.ASSISTANT, content=content or "")
             # Return empty message if no response
             return Message(role=MessageRole.ASSISTANT, content="")
         except Exception:

@@ -95,14 +95,32 @@ class SummarizationModel(SummarizationModelProtocol):
                 messages=messages, model_name=summary_model, stream=True
             )
             async for chunk in stream:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
+                choices = (
+                    chunk.get("choices") if isinstance(chunk, dict) else chunk.choices
+                )
+                if choices and len(choices) > 0:
+                    choice = choices[0]
+                    delta = (
+                        choice.get("delta")
+                        if isinstance(choice, dict)
+                        else choice.delta
+                    )
                     # Accumulate thinking deltas
-                    if delta.think:
-                        accumulated_thinking += delta.think
+                    think_content = (
+                        delta.get("think")
+                        if isinstance(delta, dict)
+                        else getattr(delta, "think", None)
+                    )
+                    if think_content:
+                        accumulated_thinking += think_content
                     # Accumulate content deltas
-                    if delta.content:
-                        accumulated_content += delta.content
+                    content = (
+                        delta.get("content")
+                        if isinstance(delta, dict)
+                        else getattr(delta, "content", None)
+                    )
+                    if content:
+                        accumulated_content += content
                     # Yield current state
                     yield accumulated_thinking, accumulated_content
 

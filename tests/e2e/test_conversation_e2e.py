@@ -1,8 +1,8 @@
 from unittest.mock import patch
 
 import pytest
+from olm_api_sdk.v2 import OlmLocalClientV2
 
-from src.clients.olm_local_client_v2 import OlmLocalClientV2
 from src.models.conversation_model import ConversationModel
 
 

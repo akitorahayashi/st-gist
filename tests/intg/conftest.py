@@ -1,8 +1,18 @@
+import os
+import sys
 from unittest.mock import patch
 
 import pytest
 
-from dev.mocks.clients.mock_olm_client_v2 import MockOlmClientV2
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(__file__), "../../.venv/lib/python3.12/site-packages/sdk"
+    ),
+)
+
+from olm_api_sdk.v2.mock_client import MockOlmClientV2
+
 from src.models.conversation_model import ConversationModel
 from src.models.scraping_model import ScrapingModel
 from src.models.summarization_model import SummarizationModel
