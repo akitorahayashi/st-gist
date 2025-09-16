@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from string import Template
 
 import streamlit as st
@@ -67,6 +68,31 @@ class SummarizationModel(SummarizationModelProtocol):
         with open(prompt_path, "r", encoding="utf-8") as f:
             return Template(f.read())
 
+    def _parse_thinking_content(self, text: str) -> tuple[str, str]:
+        """
+        Parse text to extract thinking and content parts.
+
+        Args:
+            text: Text potentially containing <think> tags
+
+        Returns:
+            tuple: (thinking_content, actual_content)
+        """
+        if not text:
+            return "", ""
+
+        # Extract thinking content
+        thinking_pattern = r"<think>(.*?)</think>"
+        thinking_matches = re.findall(thinking_pattern, text, re.DOTALL)
+        thinking_content = "\n".join(thinking_matches).strip()
+
+        # Remove thinking tags to get actual content
+        content_without_thinking = re.sub(
+            thinking_pattern, "", text, flags=re.DOTALL
+        ).strip()
+
+        return thinking_content, content_without_thinking
+
     async def stream_summary(self, scraped_content: str):
         """
         Handle stream generation from scraped content and yield thinking/summary content.
@@ -87,8 +113,7 @@ class SummarizationModel(SummarizationModelProtocol):
 
         truncated_prompt = self._truncate_prompt(prompt)
 
-        accumulated_thinking = ""
-        accumulated_content = ""
+        accumulated_raw = ""
 
         try:
             summary_model = st.secrets.get("SUMMARY_MODEL", "qwen3:0.6b")
@@ -114,24 +139,19 @@ class SummarizationModel(SummarizationModelProtocol):
                         if isinstance(choice, dict)
                         else choice.delta
                     )
-                    # Accumulate thinking deltas
-                    think_content = (
-                        delta.get("think")
-                        if isinstance(delta, dict)
-                        else getattr(delta, "think", None)
-                    )
-                    if think_content:
-                        accumulated_thinking += think_content
-                    # Accumulate content deltas
+
+                    # Accumulate all content (including think tags)
                     content = (
                         delta.get("content")
                         if isinstance(delta, dict)
                         else getattr(delta, "content", None)
                     )
                     if content:
-                        accumulated_content += content
-                    # Yield current state
-                    yield accumulated_thinking, accumulated_content
+                        accumulated_raw += content
+
+                        # Parse to separate thinking and actual content
+                        thinking_content, actual_content = self._parse_thinking_content(accumulated_raw)
+                        yield thinking_content, actual_content
 
         except Exception as e:
             logger.error(f"Streaming summarization failed: {e}")
@@ -142,11 +162,12 @@ class SummarizationModel(SummarizationModelProtocol):
             self.is_summarizing = False
 
         # Store final results in instance variables
-        self.thinking = accumulated_thinking
-        self.summary = accumulated_content
+        final_thinking, final_summary = self._parse_thinking_content(accumulated_raw)
+        self.thinking = final_thinking
+        self.summary = final_summary
 
         # Final yield with complete data
-        yield accumulated_thinking, accumulated_content
+        yield final_thinking, final_summary
 
     def reset(self):
         """Reset the summarization model state."""

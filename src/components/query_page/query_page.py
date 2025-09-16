@@ -42,7 +42,7 @@ def render_query_page():
 
             try:
                 with st.spinner("要約を開始しています..."):
-                    thinking_placeholder = st.empty()
+                    thinking_container = st.empty()
                     summary_placeholder = st.empty()
                     async def stream_to_placeholders():
                         thinking_content = ""
@@ -55,11 +55,23 @@ def render_query_page():
                             async for thinking_chunk, summary_chunk in stream_generator:
                                 thinking_content = thinking_chunk
                                 summary_content = summary_chunk
-                                thinking_placeholder.markdown(thinking_content)
-                                summary_placeholder.markdown(summary_content)
 
-                            thinking_placeholder.markdown(thinking_content)
-                            summary_placeholder.markdown(summary_content)
+                                # ストリーミング中もexpanderで思考過程を表示
+                                with thinking_container.container():
+                                    if thinking_content.strip():
+                                        st.markdown("### 🤔 思考過程")
+                                        with st.expander("思考プロセス", expanded=True):
+                                            st.markdown(thinking_content)
+
+                                # 要約内容を表示
+                                if summary_content.strip():
+                                    summary_placeholder.markdown(summary_content)
+                                else:
+                                    summary_placeholder.empty()
+
+                            # ストリーミング完了後はプレースホルダーをクリア
+                            thinking_container.empty()
+                            summary_placeholder.empty()
 
                         except Exception as e:
                             error_msg = f"要約の生成中にエラーが発生しました: {str(e)}"
@@ -88,7 +100,8 @@ def render_query_page():
                     st.code("ollama serve", language="bash")
                 st.stop()
         if summarization_model.thinking.strip():
-            with st.expander("🤔 思考過程", expanded=False):
+            st.markdown("### 🤔 思考過程")
+            with st.expander("思考プロセス", expanded=True):
                 st.markdown(summarization_model.thinking)
 
         if summarization_model.summary.strip():
