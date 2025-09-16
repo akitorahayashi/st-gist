@@ -1,3 +1,4 @@
 [submodule "olm-api"]
 	path = olm-api
 	url = https://github.com/akitorahayashi/olm-api.git
+	branch = v2.3.0

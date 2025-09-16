@@ -33,6 +33,8 @@ help: ## Display this help message
 setup: ## Project initial setup: install dependencies and create secrets.toml file
 	@echo "🐍 Installing python dependencies with uv..."
 	@uv sync
+	@echo "📦 Initializing and updating git submodules..."
+	@git submodule update --init --recursive
 	@echo "📄 Creating secrets.toml file..."
 	@if [ ! -f .streamlit/secrets.toml ]; then \
 		echo "Creating .streamlit/secrets.toml from .streamlit/secrets.example.toml..." ; \
