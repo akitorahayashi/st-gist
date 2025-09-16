@@ -13,12 +13,12 @@ if sdk_path not in sys.path:
     sys.path.insert(0, sdk_path)
 
 import streamlit as st  # noqa: E402
+
 from olm_api_sdk.v2 import (  # noqa: E402
     MockOlmClientV2,
     OlmApiClientV2,
     OlmLocalClientV2,
 )
-
 from src.components.query_page.query_page import render_query_page  # noqa: E402
 from src.components.sidebar.sidebar import render_sidebar  # noqa: E402
 from src.components.url_input.url_input_page import render_url_input_page  # noqa: E402

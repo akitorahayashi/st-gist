@@ -95,38 +95,59 @@ class SummarizationModel(SummarizationModelProtocol):
                 messages=messages, model_name=summary_model, stream=True
             )
             async for chunk in stream:
-                choices = (
-                    chunk.get("choices") if isinstance(chunk, dict) else chunk.choices
-                )
-                if choices and len(choices) > 0:
-                    choice = choices[0]
-                    delta = (
-                        choice.get("delta")
-                        if isinstance(choice, dict)
-                        else choice.delta
-                    )
-                    # Accumulate thinking deltas
-                    think_content = (
-                        delta.get("think")
-                        if isinstance(delta, dict)
-                        else getattr(delta, "think", None)
-                    )
-                    if think_content:
-                        accumulated_thinking += think_content
-                    # Accumulate content deltas
-                    content = (
-                        delta.get("content")
-                        if isinstance(delta, dict)
-                        else getattr(delta, "content", None)
-                    )
-                    if content:
-                        accumulated_content += content
-                    # Yield current state
-                    yield accumulated_thinking, accumulated_content
+                try:
+                    # Handle both dict and object responses
+                    if isinstance(chunk, dict):
+                        choices = chunk.get("choices", [])
+                    elif hasattr(chunk, "choices"):
+                        choices = chunk.choices
+                    else:
+                        # Unexpected format - skip this chunk
+                        logger.warning(f"Unexpected chunk format: {type(chunk)}")
+                        continue
+
+                    if choices and len(choices) > 0:
+                        choice = choices[0]
+
+                        # Extract delta from choice
+                        if isinstance(choice, dict):
+                            delta = choice.get("delta", {})
+                        elif hasattr(choice, "delta"):
+                            delta = choice.delta
+                        else:
+                            # No delta found - skip
+                            continue
+
+                        # Accumulate thinking deltas
+                        if isinstance(delta, dict):
+                            think_content = delta.get("think", "")
+                            content = delta.get("content", "")
+                        else:
+                            think_content = getattr(delta, "think", "")
+                            content = getattr(delta, "content", "")
+
+                        if think_content:
+                            accumulated_thinking += think_content
+                        if content:
+                            accumulated_content += content
+
+                        # Yield current state
+                        yield accumulated_thinking, accumulated_content
+
+                except Exception as e:
+                    logger.warning(f"Error processing chunk: {e}")
+                    # Continue processing other chunks
+                    continue
 
         except Exception as e:
             logger.error(f"Streaming summarization failed: {e}")
-            error_msg = "要約のストリーミング生成に失敗しました。"
+
+            # 接続エラーの場合はより具体的なメッセージを提供
+            if "connection" in str(e).lower() or "failed" in str(e).lower():
+                error_msg = "Ollamaサーバーへの接続に失敗しました。サーバーが起動しているか確認してください。"
+            else:
+                error_msg = f"要約のストリーミング生成に失敗しました: {str(e)}"
+
             self.last_error = error_msg
             raise SummarizationModelError(error_msg) from e
         finally:
