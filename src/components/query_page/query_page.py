@@ -1,3 +1,5 @@
+import asyncio
+
 import streamlit as st
 
 from src.components.query_page.chat_section import render_chat_section
@@ -61,6 +63,10 @@ def render_query_page():
                     stream_generator = summarization_model.stream_summary(
                         scraped_content
                     )
+
+                    # プレースホルダーを作成
+                    thinking_placeholder = st.empty()
+                    summary_placeholder = st.empty()
 
                     # ストリームを処理し、プレースホルダーを更新する async 関数
                     async def stream_to_placeholders():
